@@ -1,5 +1,5 @@
 class Robot {
-	
+
   String name;
   int numLegs;
   float powerLevel;
@@ -9,7 +9,7 @@ class Robot {
     numLegs = 2;
     powerLevel = 2.0f;
   }
-  
+
   Robot() {
     this("Standard Model");
   }

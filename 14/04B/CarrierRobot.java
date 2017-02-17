@@ -2,17 +2,17 @@ class CarrierRobot extends AbstractRobot {
 
   @Override
   void greet(TranslationRobot other) {
-    talk("'Hello from a TranslationRobot to a CarrierRobot.'"); 
+    talk("'Hello from a TranslationRobot to a CarrierRobot.'");
   }
 
   @Override
   void greet(CarrierRobot other) {
-    talk("'Hello from a CarrierRobot to another.'"); 
+    talk("'Hello from a CarrierRobot to another.'");
   }
 
-  @Override 
+  @Override
   void greet(AbstractRobot other) {
-    other.greet(this); 
+    other.greet(this);
   }
 
   void carry() {

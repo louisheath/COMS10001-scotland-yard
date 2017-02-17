@@ -1,5 +1,5 @@
 public class InheritanceWorld {
-	
+
   public static void main (String[] args) {
     Robot c3po = new Robot();
     TranslationRobot c4po = new TranslationRobot("e");

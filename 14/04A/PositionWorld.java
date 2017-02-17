@@ -1,4 +1,4 @@
-class PositionWorld { 
+class PositionWorld {
 
   public static void main (String[] args) {
     Position[] positions = new Position[3];
@@ -9,6 +9,8 @@ class PositionWorld {
     positions[2].move(1,1);
     positions[2].move(-1,-2);
     positions[2] = positions[1];
-    positions[1].move(0,-1);
+    System.out.println(positions[1].x + " " +positions[1].y);
+    positions[1].move(0,5);
+    System.out.println(positions[1].x + " " +positions[1].y);
   }
 }
