@@ -1,5 +1,5 @@
 public class ExceptionalCalculator {
-	
+
   public static void main (String[] args) {
     Adder adder = new Adder();
     try {
