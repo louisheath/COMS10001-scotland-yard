@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?><?import javafx.scene.control.Label?><?import javafx.scene.control.ProgressIndicator?><?import javafx.scene.layout.GridPane?><?import javafx.scene.layout.HBox?><?import javafx.scene.layout.StackPane?><?import javafx.scene.layout.VBox?><?import uk.ac.bris.cs.fxkit.pane.CoverPane?>
+<StackPane fx:id="root" minHeight="300.0" minWidth="300.0" xmlns="http://javafx.com/javafx/8.0.102" xmlns:fx="http://javafx.com/fxml/1">
+    <children>
+        <VBox fx:id="surface" alignment="TOP_CENTER" StackPane.alignment="TOP_CENTER">
+            <children>
+                <HBox alignment="CENTER" VBox.vgrow="NEVER">
+                    <children>
+                        <Label fx:id="status" text="Label" />
+                        <ProgressIndicator fx:id="timer" minHeight="-Infinity" minWidth="-Infinity" prefHeight="60.0" prefWidth="60.0" progress="0.12">
+                            <opaqueInsets>
+                                <Insets />
+                            </opaqueInsets>
+                            <HBox.margin>
+                                <Insets />
+                            </HBox.margin>
+                        </ProgressIndicator>
+                    </children>
+                </HBox>
+
+
+                <CoverPane VBox.vgrow="ALWAYS">
+
+                    <children>
+                        <GridPane fx:id="grid" alignment="CENTER" gridLinesVisible="true" />
+
+                    </children>
+
+
+                </CoverPane>
+
+
+            </children>
+        </VBox>
+        <StackPane fx:id="overlay" pickOnBounds="false" />
+    </children>
+</StackPane>

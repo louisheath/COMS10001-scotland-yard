@@ -1,0 +1,34 @@
+
+#root{
+    -fx-font-size: 1.3em;
+
+}
+
+#status {
+    /*-fx-padding: 10px;*/
+    /*-fx-font-size: 2em;*/
+}
+
+#timer{
+    -fx-translate-y: 1em;
+}
+
+#timer:determinate .determinate-indicator .percentage{
+    -fx-fill: null;
+}
+
+#local-setup {
+    -fx-padding: 30px;
+}
+
+#local-setup .label {
+    -fx-padding: 1em;
+}
+
+#remote-setup {
+    -fx-padding: 30px;
+}
+
+#remote-setup .label {
+    -fx-padding: 1em;
+}
