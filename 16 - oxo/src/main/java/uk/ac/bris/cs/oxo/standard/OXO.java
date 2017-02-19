@@ -66,6 +66,7 @@ public class OXO implements OXOGame {
 
 	@Override
 	public void start() {
+		//this bit is broken as dunno what it is meant to do
 		Consumer<Move> callback;
 		Set<Move> validMoves = validMoves();
 		Player player = (currentSide == Side.CROSS) ? crossSide : noughtSide;
