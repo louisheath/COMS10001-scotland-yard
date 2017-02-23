@@ -48,6 +48,7 @@ public class OXO implements OXOGame, Consumer<Move> {
 
 	private Set<Move> validMoves() {
 	  Set<Move> moves = new HashSet<>();
+
 	  for (int row = 0; row < matrix.rowSize(); row++) {
 	    for (int col = 0; col < matrix.columnSize(); col++) {
 	      if(matrix.get(row,col).isEmpty()) moves.add(new Move(row,col));
@@ -56,27 +57,53 @@ public class OXO implements OXOGame, Consumer<Move> {
 		return moves;
 	}
 
-	private boolean won() {
+	private boolean won(Move move) {
 		int rows = matrix.rowSize();
 		int cols = matrix.columnSize();
 
+		int moveR = move.row;
+		int moveC = move.column;
+
+		//check if column is completed
 		boolean test = true;
-		for (int row = 0; row < rows; row++) {
-			for (int col = 1; col < cols; col++) {
-			  if (matrix.get(row,col)!=matrix.get(row,col-1)) test = false;
-		  }
+		for (int r = 0; r < rows; r++) {
+			if (!(matrix.get(r,moveC).sameSideAs(this.currentSide))) test = false;
 		}
 		if (test) return true;
-
 		test = true;
-		for (int col = 0; col < cols; col++) {
-			for (int row = 1; row < rows; row++) {
-				if (matrix.get(row,col)!=matrix.get(row-1,col)) test = false;
+
+		//check if row is completed
+		for (int c = 0; c < cols; c++) {
+			if ( !(matrix.get(moveR,c).sameSideAs(this.currentSide))) test = false;
+		}
+		if (test) return true;
+		test = true;
+
+		//diagonal top left to bottom right
+		if (moveR == moveC) {
+			for (int i = 0; i < rows; i++) {
+				if ( !(matrix.get(i,i).sameSideAs(this.currentSide))) test = false;
 			}
+			if (test) return true;
+			test = true;
+		}
+
+		//diagonal top right to bottom left
+		if (moveR + moveC == rows - 1) {
+			for (int i = 0; i < rows; i++) {
+				if ( !(matrix.get(i,cols-i-1).sameSideAs(this.currentSide))) test = false;
+			}
+			if (test) return true;
+			test = true;
+		}
+/*
+		//diagonal top right to bottom left
+		for (int i = 1; i < rows; i++) {
+			if ( !(matrix.get(i,cols-i).sameSideAs(matrix.get(i-1,cols-i+1).side()))) test = false;
 		}
 		if (test) return true;
-
-		test = true;
+		*/
+/*
 		//List<Cell> mainDiag = matrix.mainDiagonal()
 		for (int i = 1; i < matrix.mainDiagonal().size(); i++) {
 			if (matrix.mainDiagonal().get(i)!=matrix.mainDiagonal().get(i-1)) test = false;
@@ -88,7 +115,7 @@ public class OXO implements OXOGame, Consumer<Move> {
 			if (matrix.antiDiagonal().get(i)!=matrix.antiDiagonal().get(i-1)) test = false;
 		}
 		if (test) return true;
-
+*/
 		return false;
 	}
 
@@ -111,7 +138,7 @@ public class OXO implements OXOGame, Consumer<Move> {
 
 			for (Spectator s : spectators) s.moveMade(currentSide,move);
 
-			if (won()) {
+			if (won(move)) {
 				Outcome o = new Outcome(currentSide);
 				for (Spectator s : spectators) s.gameOver(o);
 			}
