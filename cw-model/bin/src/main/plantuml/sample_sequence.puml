@@ -1,0 +1,116 @@
+@startuml
+
+skinparam monochrome true
+
+title Sample game sequence
+
+legend right
+Type legend
+   S - interface uk.ac.bris.cs.scotlandyard.model.Spectator
+   M - class uk.ac.bris.cs.scotlandyard.model.ScotlandYardModel
+   P - interface uk.ac.bris.cs.scotlandyard.model.Player
+endlegend
+
+actor UI
+participant Spectator <<(S, #BBBBBB)>>
+participant ScotlandYardModel <<(M, #BBBBBB)>>
+participant MrX <<(P, #BBBBBB)>>
+participant Red <<(P, #BBBBBB)>>
+participant Blue <<(P, #BBBBBB)>>
+
+autonumber
+
+
+UI -> ScotlandYardModel : startRotate()::void
+group rotation
+
+note over ScotlandYardModel: Round = 0
+ScotlandYardModel -> MrX: makeMove(view, int, move[], callback<move>)::void
+activate MrX
+MrX-->ScotlandYardModel : Ticket
+deactivate MrX
+note over ScotlandYardModel: Round = 1
+ScotlandYardModel->Spectator: onRoundStarted(view, 1)::void
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel -> Red: makeMove(view, int, move[], callback<move>)::void
+activate Red
+Red-->ScotlandYardModel : Ticket
+deactivate Red
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel -> Blue: makeMove(view, int, move[], callback<move>)::void
+activate Blue
+Blue-->ScotlandYardModel : Ticket
+deactivate Blue
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel->Spectator: onRotationComplete(view)::void
+
+end
+
+UI -> ScotlandYardModel : startRotate()::void
+group rotation
+
+note over ScotlandYardModel: Round = 1
+ScotlandYardModel -> MrX: makeMove(view, int, move[], callback<move>)::void
+activate MrX
+MrX-->ScotlandYardModel : Double[Ticket1, Ticket2]
+deactivate  MrX
+note over ScotlandYardModel: Round = 1
+ScotlandYardModel-> Spectator: onMoveMade(view, Double)::void
+note over ScotlandYardModel: Round = 2
+ScotlandYardModel->Spectator: onRoundStarted(view, 2)::void
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket1)::void
+note over ScotlandYardModel: Round = 3
+ScotlandYardModel->Spectator: onRoundStarted(view, 3)::void
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket2)::void
+
+ScotlandYardModel -> Red: makeMove(view, int, move[], callback<move>)::void
+activate Red
+Red-->ScotlandYardModel : Ticket
+deactivate Red
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel -> Blue: makeMove(view, int, move[], callback<move>)::void
+activate Blue
+Blue-->ScotlandYardModel : Ticket
+deactivate Blue
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel->Spectator: onRotationComplete(view)::void
+
+end
+
+UI -> ScotlandYardModel : startRotate()::void
+group rotation
+
+note over ScotlandYardModel: Round = 3
+ScotlandYardModel -> MrX: makeMove(view, int, move[], callback<move>)::void
+activate MrX
+MrX-->ScotlandYardModel : Ticket
+deactivate MrX
+note over ScotlandYardModel: Round = 4
+ScotlandYardModel->Spectator: onRoundStarted(view, 4)::void
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel -> Red: makeMove(view, int, move[], callback<move>)::void
+activate Red
+Red-->ScotlandYardModel : Ticket
+deactivate Red
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel -> Blue: makeMove(view, int, move[], callback<move>)::void
+activate Blue
+Blue-->ScotlandYardModel : Ticket
+deactivate Blue
+ScotlandYardModel-> Spectator: onMoveMade(view, Ticket)::void
+
+ScotlandYardModel->Spectator: onGameOver(view, [Red, Blue])::void
+
+note over ScotlandYardModel: Round = 4, Game finished
+
+end
+
+
+@enduml

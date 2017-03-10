@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+
+<ToolBar fx:id="root" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+    <items>
+        <HBox alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="8.0" HBox.hgrow="ALWAYS">
+            <children>
+                <Label text="Round:" />
+                <Label fx:id="round" />
+                <Separator orientation="VERTICAL" />
+                <Label text="Current player:" />
+                <Label fx:id="player" />
+                <Separator orientation="VERTICAL" />
+                <Label layoutX="78.0" layoutY="10.0" text="Possible moves:" />
+                <Label fx:id="validMoves" layoutX="164.0" layoutY="10.0" />
+                <Separator layoutX="172.0" layoutY="10.0" orientation="VERTICAL" />
+                <Label text="Time elapsed:" managed="false" />
+                <Label fx:id="time" />
+                <Separator orientation="VERTICAL" managed="false"/>
+                <Label text="Status:" />
+                <Label fx:id="status" />
+                <Separator orientation="VERTICAL" />
+                <Region maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                <Label text="Volume" managed="false" />
+                <Slider fx:id="volume" blockIncrement="0.1" value="100.0" managed="false" HBox.hgrow="NEVER" />
+            </children>
+        </HBox>
+    </items>
+</ToolBar>
