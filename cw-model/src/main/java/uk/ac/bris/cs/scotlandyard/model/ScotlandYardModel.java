@@ -42,7 +42,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
             }
             
             throw new RuntimeException("Implement me");
-		// TODO
+		
 	}
 
 	@Override
