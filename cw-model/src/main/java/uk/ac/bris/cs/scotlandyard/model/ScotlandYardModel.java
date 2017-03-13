@@ -41,6 +41,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
             throw new IllegalArgumentException("Empty graph");
             }
             
+            if (mrX.colour != Black) { // or mr.colour.isDetective()
+            throw new IllegalArgumentException("MrX should be Black");
+            } 
             throw new RuntimeException("Implement me");
 		
 	}
