@@ -44,8 +44,32 @@ public class ScotlandYardModel implements ScotlandYardGame {
             if (mrX.colour != Black) { // or mr.colour.isDetective()
             throw new IllegalArgumentException("MrX should be Black");
             } 
+	
+            ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+            for (PlayerConfiguration configuration : restOfTheDetectives)
+               configurations.add(requireNonNull(configuration));
+               configurations.add(0, firstDetective);
+               configurations.add(0, mrX);
+                
+            Set<Integer> set = new HashSet<>();
+            Set<Colour> set2 = new HashSet<>();
+            for (PlayerConfiguration configuration : configurations) {
+                
+                if (set.contains(configuration.location))
+                        throw new IllegalArgumentException("Duplicate location");
+                set.add(configuration.location);
+                
+                if (set2.contains(configuration.colour))
+                        throw new IllegalArgumentException("Duplicate colour");
+                set2.add(configuration.colour);
+                
+               // if (!configuration.tickets.containsKey("Taxi"))
+                  //      throw new IllegalArgumentException("No Taxi Tickets");
+            }
+            
+            
+            
             throw new RuntimeException("Implement me");
-		
 	}
 
 	@Override
