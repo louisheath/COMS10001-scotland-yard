@@ -26,11 +26,15 @@ import uk.ac.bris.cs.gamekit.graph.Graph;
 import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 
 // TODO implement all methods and pass all tests
-public class ScotlandYardModel implements ScotlandYardGame {
+public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
         List<Boolean> rounds;
         Graph<Integer, Transport> graph;
         List<ScotlandYardPlayer> playerlist = new ArrayList<ScotlandYardPlayer>();
+        Colour currentPlayer = Black;
+        int round = 1;
+        int lastKnownBlack = 0;
+        Set<Colour> winners = Collections.emptySet();
         
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
@@ -107,10 +111,19 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public void startRotate() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		requestMove(currentPlayer);
 	}
+        
+        private void requestMove (Colour player ) {
+            Set<Move> moves = validMoves();
+            Player.makeMove(this,getPlayerLocation(player),moves,this);
+        }
 
+        private Set<Move> validMoves(){
+            return Collections.EMPTY_SET;
+        }
+        
+        
 	@Override
 	public Collection<Spectator> getSpectators() {
 		// TODO
@@ -129,38 +142,42 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Set<Colour> getWinningPlayers() {
-		// TODO
-		throw new RuntimeException("Implement me");
+            return Collections.unmodifiableSet(winners);
 	}
 
 	@Override
 	public int getPlayerLocation(Colour colour) {
-		// TODO
-		throw new RuntimeException("Implement me");
+		if(colour != Black)
+                {
+                    for (ScotlandYardPlayer player : playerlist) {
+                        if (player.colour() == colour) return player.location();
+                    }
+                }
+		return lastKnownBlack;
 	}
 
 	@Override
 	public int getPlayerTickets(Colour colour, Ticket ticket) {
-		// TODO
-		throw new RuntimeException("Implement me");
+            int ticketcount = 0;
+		 for (ScotlandYardPlayer player : playerlist) {
+                        if (player.colour() == colour) ticketcount = player.tickets().get(ticket);
+                    }
+                 return ticketcount;
 	}
 
 	@Override
 	public boolean isGameOver() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		return false;
 	}
 
 	@Override
 	public Colour getCurrentPlayer() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		return currentPlayer;
 	}
 
 	@Override
 	public int getCurrentRound() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		return round;
 	}
 
 	@Override
