@@ -30,9 +30,9 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
         List<Boolean> rounds;
         Graph<Integer, Transport> graph;
-        List<ScotlandYardPlayer> playerlist = new ArrayList<ScotlandYardPlayer>();
-        Colour currentPlayer = Black;
-        int round = 1;
+        List<ScotlandYardPlayer> playerList = new ArrayList<ScotlandYardPlayer>();
+        int currentPlayer = 0;
+        int round = 0;
         int lastKnownBlack = 0;
         Set<Colour> winners = Collections.emptySet();
         
@@ -92,7 +92,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 colours.add(configuration.colour);
                 
                 ScotlandYardPlayer player = new ScotlandYardPlayer(configuration.player,configuration.colour,configuration.location,configuration.tickets);
-                playerlist.add(player);
+                playerList.add(player);
             }
         
 	}
@@ -111,16 +111,89 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public void startRotate() {
-		requestMove(currentPlayer);
-	}
-        
-        private void requestMove (Colour player ) {
-            Set<Move> moves = validMoves();
-            Player.makeMove(this,getPlayerLocation(player),moves,this);
+            round++;
+            ScotlandYardPlayer player = playerList.get(0);
+            player.player().makeMove(this, player.location(), validMoves(), this);
         }
+        
+        @Override
+        public void accept(Move move){
+            boolean accepted = false;
+            for (Move valid : validMoves()) {
+                if ( move == valid ) accepted = true;
+            }
+            if ( !accepted ) throw new IllegalArgumentException("Invalid Move");
+            else{
+                // end of rotation, go back to mrX for startRotate()
+                if(currentPlayer == playerList.size()-1)
+                {
+                    currentPlayer = 0;
+                }
+                else
+                {
+                    if (move instanceof TicketMove)
+                    {
+                        TicketMove ticketMove = (TicketMove) move;
+                        /*for(Spectator spectator : spectators){
+                        //    spectator.onMoveMade(this, move);
+                        }*/
+                        //make the move
+                        playerList.get(currentPlayer).location(ticketMove.destination());
+                        
+                        //remove tickets
+                        playerList.get(currentPlayer).tickets().put(ticketMove.ticket(),playerList.get(currentPlayer).tickets().get(ticketMove.ticket())-1);
+                        
+                        //if detective give mrx ticket
+                        if(currentPlayer!=0)
+                        {
+                            playerList.get(0).tickets().put(ticketMove.ticket(),playerList.get(0).tickets().get(ticketMove.ticket())+1);
+                        }
+                    }
+                    currentPlayer++;
+                    ScotlandYardPlayer player = playerList.get(currentPlayer);
+                    player.player().makeMove(this, player.location(), validMoves(), this);
+                    
+                }
+
+            }
+        }
+     
+        
 
         private Set<Move> validMoves(){
-            return Collections.EMPTY_SET;
+            int playerLocation = getPlayerLocation(playerList.get(currentPlayer).colour());
+            Set<Move> validMoves = Collections.emptySet();
+            
+            if(graph.containsNode(playerLocation)){
+                Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
+                for (Edge<Integer, Transport> edge : edges) {
+                    if (playerList.get(currentPlayer).hasTickets(Ticket.fromTransport(edge.data()))) {
+                        //is next spot empty
+                        boolean empty = true;
+                        for(ScotlandYardPlayer player : playerList)
+                        {
+                            if(player.location()==edge.destination().value()){
+                                empty = false;
+                            }
+                        } 
+                        if(empty){
+                            Move move = new TicketMove(playerList.get(currentPlayer).colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
+                            validMoves.add(move);
+                            
+                            if(currentPlayer==0)
+                            {
+                                //double moves
+                            }
+                        }
+                    }
+                }
+            }
+            if(validMoves.isEmpty() /*Collections.emptySet()*/){
+                validMoves.add(new PassMove(playerList.get(currentPlayer).colour()));
+            }
+
+            
+            return validMoves;
         }
         
         
@@ -133,7 +206,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	@Override
 	public List<Colour> getPlayers() {
             List<Colour> playercolours = new ArrayList<Colour> ();
-            for(ScotlandYardPlayer player : playerlist)
+            for(ScotlandYardPlayer player : playerList)
             {
                 playercolours.add(player.colour());
             }    
@@ -149,7 +222,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	public int getPlayerLocation(Colour colour) {
 		if(colour != Black)
                 {
-                    for (ScotlandYardPlayer player : playerlist) {
+                    for (ScotlandYardPlayer player : playerList) {
                         if (player.colour() == colour) return player.location();
                     }
                 }
@@ -159,7 +232,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	@Override
 	public int getPlayerTickets(Colour colour, Ticket ticket) {
             int ticketcount = 0;
-		 for (ScotlandYardPlayer player : playerlist) {
+		 for (ScotlandYardPlayer player : playerList) {
                         if (player.colour() == colour) ticketcount = player.tickets().get(ticket);
                     }
                  return ticketcount;
@@ -167,12 +240,16 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public boolean isGameOver() {
-		return false;
+            boolean gameOver = false;
+                //if it's the last round game over
+                //for ( player : playerlist)
+            
+		return gameOver;
 	}
 
 	@Override
 	public Colour getCurrentPlayer() {
-		return currentPlayer;
+		return playerList.get(currentPlayer).colour();
 	}
 
 	@Override
@@ -182,8 +259,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public boolean isRevealRound() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		return rounds.get(getCurrentRound());
 	}
 
 	@Override
