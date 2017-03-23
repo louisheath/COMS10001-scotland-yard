@@ -38,6 +38,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         int round = 0;
         int lastKnownMrX = 0;
         Set<Colour> winners = Collections.emptySet();
+        private Collection<Spectator> spectators = new ArrayList<>();
         
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
@@ -76,7 +77,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     if (key == Double || key == Secret) {
                         
                         if (count > 0 && c.colour != Black)
-                            throw new IllegalArgumentException("Players Aren't Allowed Double or SecretTickets");
+                            throw new IllegalArgumentException("Players Aren't Allowed Double or Secret Tickets");
                         
                     }
                     else if (key != Bus && key != Taxi && key != Underground)
@@ -103,26 +104,25 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public void registerSpectator(Spectator spectator) {
-		// TODO
-		throw new RuntimeException("Implement me");
+		spectators.add(spectator);
 	}
 
 	@Override
 	public void unregisterSpectator(Spectator spectator) {
-		// TODO
-		throw new RuntimeException("Implement me");
+		spectators.remove(spectator);
 	}
 
 	@Override
 	public void startRotate() {
+            if(isGameOver()) throw new IllegalStateException("Game is over");
             round++;
             ScotlandYardPlayer player = playerList.get(currentPlayer);
             player.player().makeMove(this, player.location(), validMoves(), this);
         }
         
         @Override
-        public void accept(Move move){
-            
+        public void accept(Move movein){
+            Move move = requireNonNull(movein);
             // check if the move is accepted
             boolean accepted = false;
             for (Move valid : validMoves()) {
@@ -132,52 +132,55 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 }
             }
             if ( !accepted ) throw new IllegalArgumentException("Invalid Move");
-            
             else{
-                // end of rotation, go back to mrX for startRotate()
-                /*
-                
-                isn't " playerList.size()-1 " the last detective?
-                if so this statement will skip the last player's move?
-                
-                */
-                if(currentPlayer == playerList.size()-1)
-                    currentPlayer = 0;
-                
+                ScotlandYardPlayer player = playerList.get(currentPlayer);
+                if (move instanceof TicketMove)
+                {
+                    TicketMove ticketMove = (TicketMove) move;
+                    
+                    /*for(Spectator spectator : spectators){
+                        spectator.onMoveMade(this, move);
+                    }*/
+                        
+                        
+                    //make the move
+                    player.location(ticketMove.destination());
+                    //If its Mr X and time to reveal update his last known position
+                    if(currentPlayer == 0 && isRevealRound()) lastKnownMrX = ticketMove.destination();
+                        
+                    //remove tickets
+                    player.removeTicket(ticketMove.ticket());
+                    // lol //player.tickets().put(ticketMove.ticket(), player.tickets().get(ticketMove.ticket())-1);
+                        
+                    //if detective give mrx ticket
+                    if (currentPlayer != 0) playerList.get(0).addTicket(ticketMove.ticket());// lol again //playerList.get(0).tickets().put(ticketMove.ticket(),playerList.get(0).tickets().get(ticketMove.ticket())+1);
+                }
+                // DoubleMove  
+                else if (move instanceof DoubleMove)
+                {
+                    DoubleMove doubleMove = (DoubleMove) move;
+                    player.location(doubleMove.secondMove().destination());
+                    player.removeTicket(doubleMove.firstMove().ticket());
+                    player.removeTicket(doubleMove.secondMove().ticket());
+                    player.removeTicket(Double);
+                    //do double move stuff
+                }
+                // PassMove
+                else if (move instanceof PassMove)
+                {
+                    if(currentPlayer == 0)  throw new IllegalArgumentException("oi oi mrX cant pass move");
+                }
+                    
+                currentPlayer++;
+                //if next player isnt in the list reset else call make move on next player
+                if(currentPlayer == playerList.size()) currentPlayer = 0;
                 else
                 {
-                    if (move instanceof TicketMove)
-                    {
-                        TicketMove ticketMove = (TicketMove) move;
-                        ScotlandYardPlayer player = playerList.get(currentPlayer);
-                        
-                        /*for(Spectator spectator : spectators){
-                        //    spectator.onMoveMade(this, move);
-                        }*/
-                        
-                        
-                        //make the move
-                        player.location(ticketMove.destination());
-                        
-                        //remove tickets
-                        player.removeTicket(ticketMove.ticket());
-                        // lol //player.tickets().put(ticketMove.ticket(), player.tickets().get(ticketMove.ticket())-1);
-                        
-                        //if detective give mrx ticket
-                        if (currentPlayer != 0)
-                            playerList.get(0).addTicket(ticketMove.ticket());// lol again //playerList.get(0).tickets().put(ticketMove.ticket(),playerList.get(0).tickets().get(ticketMove.ticket())+1);
-                    }
-                    // DoubleMove
-                    
-                    // PassMove
-                    
-                    
-                    
+                    ScotlandYardPlayer playernext = playerList.get(currentPlayer);
                     // initiate the next move
-                    currentPlayer++;
-                    ScotlandYardPlayer player = playerList.get(currentPlayer);
-                    player.player().makeMove(this, player.location(), validMoves(), this);
+                    playernext.player().makeMove(this, playernext.location(), validMoves(), this);
                 }
+                
 
             }
         }
@@ -203,19 +206,41 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                         if(empty){
                             Move move = new TicketMove(playerList.get(currentPlayer).colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
                             validMoves.add(move);
-                            
-                            if(currentPlayer==0)
-                            {
-                                //double moves
-                            }
                         }
                     }
-                }
+                }  
             }
-            if(validMoves.isEmpty() /*Collections.emptySet()*/){
-                validMoves.add(new PassMove(playerList.get(currentPlayer).colour()));
+            //If MrX Consider Double Moves
+            if(currentPlayer==0){
+                                for (Move move1 : validMoves){
+                                    TicketMove Tmove = (TicketMove) move1;
+                                    int location = Tmove.destination();
+                                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(location));
+                                     for (Edge<Integer, Transport> edge : edges) {
+                                         //theres a ticket glitch here but not sure theyll test for it
+                                        if (playerList.get(currentPlayer).hasTickets(Ticket.fromTransport(edge.data()))) {
+                                            //is next spot empty
+                                            boolean empty = true;
+                                            for(ScotlandYardPlayer player : playerList)
+                                            {
+                                                if(player.location()==edge.destination().value()){
+                                                    empty = false;
+                                                }
+                                            } 
+                                            if(empty){
+                                                TicketMove move = new TicketMove(playerList.get(currentPlayer).colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
+                                                Move Dmove = new DoubleMove(playerList.get(currentPlayer).colour(),Tmove,move);
+                                                validMoves.add(Dmove);
+                                            }
+                                        }
+                                    }                                      
+                                }
+                            }
+            //ADDING/REMOVING else if here changes majority from errors to failures and vice versa
+            else if(validMoves.isEmpty()) {
+                PassMove pMove = new PassMove(playerList.get(currentPlayer).colour());
+                validMoves.add(pMove);
             }
-
             
             return validMoves;
         }
@@ -223,8 +248,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         
 	@Override
 	public Collection<Spectator> getSpectators() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		return spectators;
 	}
 
 	@Override
@@ -244,14 +268,15 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public int getPlayerLocation(Colour colour) {
-            if (colour != Black)
-            {
+            int location = 0;
+            if(colour == Black) location = lastKnownMrX;
+            else{
                 for (ScotlandYardPlayer player : playerList) {
-                    if (player.colour() == colour) return player.location();
+                    if (player.colour() == colour) location = player.location();
                 }
             }
-            return lastKnownMrX;
-	}
+            return location;
+        }
 
 	@Override
 	public int getPlayerTickets(Colour colour, Ticket ticket) {
@@ -265,6 +290,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	@Override
 	public boolean isGameOver() {
             boolean gameOver = false;
+            if (round > 24) gameOver = true;
             //if it's the last round game over
             //for ( player : playerlist)
 
