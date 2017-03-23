@@ -27,13 +27,16 @@ import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
-
+    
+        // Boolean for each round indicating whether it's a reveal round
         List<Boolean> rounds;
+        // The map
         Graph<Integer, Transport> graph;
-        List<ScotlandYardPlayer> playerList = new ArrayList<ScotlandYardPlayer>();
+        
+        List<ScotlandYardPlayer> playerList = new ArrayList<>();
         int currentPlayer = 0;
         int round = 0;
-        int lastKnownBlack = 0;
+        int lastKnownMrX = 0;
         Set<Colour> winners = Collections.emptySet();
         
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
@@ -41,60 +44,61 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 			PlayerConfiguration... restOfTheDetectives) {
             
             this.rounds = requireNonNull(rounds);
+            if (rounds.isEmpty()) throw new IllegalArgumentException("Empty rounds");
+            
             this.graph = requireNonNull(graph);
+            if (graph.isEmpty()) throw new IllegalArgumentException("Empty graph");
             
-            if (rounds.isEmpty()) {
-            throw new IllegalArgumentException("Empty rounds");
-            }
-            
-            if (graph.isEmpty()) {
-            throw new IllegalArgumentException("Empty graph");
-            }
-            
-            if (mrX.colour != Black) { // or mr.colour.isDetective()
-            throw new IllegalArgumentException("MrX should be Black");
-            } 
+            // Check if MrX is Black
+            if (mrX.colour.isDetective()) throw new IllegalArgumentException("MrX should be Black");
 	
+            // Make a list of configurations (players)
             ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+            configurations.add(mrX);
+            configurations.add(firstDetective);
             for (PlayerConfiguration configuration : restOfTheDetectives)
                configurations.add(requireNonNull(configuration));
-            configurations.add(0, firstDetective);
-            configurations.add(0, mrX);
-                
-            Set<Integer> set = new HashSet<>();
-            Set<Colour> colours = new HashSet<>();
-            Set<Ticket> ticketset = new HashSet<>();
-            int typecount = 0;
             
-            for (PlayerConfiguration configuration : configurations) {
+            Set<Integer> locations = new HashSet<>();
+            Set<Colour> colours = new HashSet<>();
+            int numTicketTypes;
+            
+            // for each player, and for each of their tickets
+            for (PlayerConfiguration c : configurations) {
                 
-                for ( Map.Entry<Ticket,Integer> ticket : configuration.tickets.entrySet()) {
-                    if (ticket.getKey() == Double || ticket.getKey() == Secret )
-                        if(ticket.getValue() > 0 && configuration.colour != Black)
+                numTicketTypes = 0;
+                
+                for (Map.Entry<Ticket,Integer> ticket : c.tickets.entrySet()) {
+                    
+                    Ticket key = ticket.getKey();
+                    Integer count = ticket.getValue();
+                    
+                    if (key == Double || key == Secret) {
+                        
+                        if (count > 0 && c.colour != Black)
                             throw new IllegalArgumentException("Players Aren't Allowed Double or SecretTickets");
-                        else typecount++;
-                    else if(ticket.getKey() != Bus && ticket.getKey() != Taxi && ticket.getKey() != Underground)
+                        
+                    }
+                    else if (key != Bus && key != Taxi && key != Underground)
                         throw new IllegalArgumentException("Illegal Ticket Type");
-                    else typecount++;                        
+                    
+                    numTicketTypes++;                        
                 }
                 
-                if(typecount != 5)
+                if(numTicketTypes != 5)
                     throw new IllegalArgumentException("Tickets Are Missing");
-                typecount = 0;
-
                 
-                if (set.contains(configuration.location))
+                if (locations.contains(c.location))
                         throw new IllegalArgumentException("Duplicate location");
-                set.add(configuration.location);
+                locations.add(c.location);
                 
-                if (colours.contains(configuration.colour))
+                if (colours.contains(c.colour))
                         throw new IllegalArgumentException("Duplicate colour");
-                colours.add(configuration.colour);
+                colours.add(c.colour);
                 
-                ScotlandYardPlayer player = new ScotlandYardPlayer(configuration.player,configuration.colour,configuration.location,configuration.tickets);
+                ScotlandYardPlayer player = new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets);
                 playerList.add(player);
             }
-        
 	}
 
 	@Override
@@ -112,47 +116,67 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	@Override
 	public void startRotate() {
             round++;
-            ScotlandYardPlayer player = playerList.get(0);
+            ScotlandYardPlayer player = playerList.get(currentPlayer);
             player.player().makeMove(this, player.location(), validMoves(), this);
         }
         
         @Override
         public void accept(Move move){
+            
+            // check if the move is accepted
             boolean accepted = false;
             for (Move valid : validMoves()) {
-                if ( move == valid ) accepted = true;
+                if ( move == valid ) {
+                    accepted = true;
+                    break;
+                }
             }
             if ( !accepted ) throw new IllegalArgumentException("Invalid Move");
+            
             else{
                 // end of rotation, go back to mrX for startRotate()
+                /*
+                
+                isn't " playerList.size()-1 " the last detective?
+                if so this statement will skip the last player's move?
+                
+                */
                 if(currentPlayer == playerList.size()-1)
-                {
                     currentPlayer = 0;
-                }
+                
                 else
                 {
                     if (move instanceof TicketMove)
                     {
                         TicketMove ticketMove = (TicketMove) move;
+                        ScotlandYardPlayer player = playerList.get(currentPlayer);
+                        
                         /*for(Spectator spectator : spectators){
                         //    spectator.onMoveMade(this, move);
                         }*/
+                        
+                        
                         //make the move
-                        playerList.get(currentPlayer).location(ticketMove.destination());
+                        player.location(ticketMove.destination());
                         
                         //remove tickets
-                        playerList.get(currentPlayer).tickets().put(ticketMove.ticket(),playerList.get(currentPlayer).tickets().get(ticketMove.ticket())-1);
+                        player.removeTicket(ticketMove.ticket());
+                        // lol //player.tickets().put(ticketMove.ticket(), player.tickets().get(ticketMove.ticket())-1);
                         
                         //if detective give mrx ticket
-                        if(currentPlayer!=0)
-                        {
-                            playerList.get(0).tickets().put(ticketMove.ticket(),playerList.get(0).tickets().get(ticketMove.ticket())+1);
-                        }
+                        if (currentPlayer != 0)
+                            playerList.get(0).addTicket(ticketMove.ticket());// lol again //playerList.get(0).tickets().put(ticketMove.ticket(),playerList.get(0).tickets().get(ticketMove.ticket())+1);
                     }
+                    // DoubleMove
+                    
+                    // PassMove
+                    
+                    
+                    
+                    // initiate the next move
                     currentPlayer++;
                     ScotlandYardPlayer player = playerList.get(currentPlayer);
                     player.player().makeMove(this, player.location(), validMoves(), this);
-                    
                 }
 
             }
@@ -205,12 +229,12 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public List<Colour> getPlayers() {
-            List<Colour> playercolours = new ArrayList<Colour> ();
+            List<Colour> playerColours = new ArrayList<>();
+            
             for(ScotlandYardPlayer player : playerList)
-            {
-                playercolours.add(player.colour());
-            }    
-            return Collections.unmodifiableList(playercolours);
+                playerColours.add(player.colour());
+
+            return Collections.unmodifiableList(playerColours);
 	}
 
 	@Override
@@ -220,31 +244,31 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public int getPlayerLocation(Colour colour) {
-		if(colour != Black)
-                {
-                    for (ScotlandYardPlayer player : playerList) {
-                        if (player.colour() == colour) return player.location();
-                    }
+            if (colour != Black)
+            {
+                for (ScotlandYardPlayer player : playerList) {
+                    if (player.colour() == colour) return player.location();
                 }
-		return lastKnownBlack;
+            }
+            return lastKnownMrX;
 	}
 
 	@Override
 	public int getPlayerTickets(Colour colour, Ticket ticket) {
             int ticketcount = 0;
-		 for (ScotlandYardPlayer player : playerList) {
-                        if (player.colour() == colour) ticketcount = player.tickets().get(ticket);
-                    }
-                 return ticketcount;
+            for (ScotlandYardPlayer player : playerList)
+                   if (player.colour() == colour) ticketcount = player.tickets().get(ticket);
+
+            return ticketcount;
 	}
 
 	@Override
 	public boolean isGameOver() {
             boolean gameOver = false;
-                //if it's the last round game over
-                //for ( player : playerlist)
-            
-		return gameOver;
+            //if it's the last round game over
+            //for ( player : playerlist)
+
+            return gameOver;
 	}
 
 	@Override
