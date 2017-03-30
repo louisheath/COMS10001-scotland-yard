@@ -57,8 +57,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
             configurations.add(mrX);
             configurations.add(firstDetective);
-            for (PlayerConfiguration configuration : restOfTheDetectives)
-               configurations.add(requireNonNull(configuration));
+            for (PlayerConfiguration configuration : restOfTheDetectives) configurations.add(requireNonNull(configuration));
             
             Set<Integer> locations = new HashSet<>();
             Set<Colour> colours = new HashSet<>();
@@ -90,11 +89,11 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     throw new IllegalArgumentException("Tickets Are Missing");
                 
                 if (locations.contains(c.location))
-                        throw new IllegalArgumentException("Duplicate location");
+                    throw new IllegalArgumentException("Duplicate location");
                 locations.add(c.location);
                 
                 if (colours.contains(c.colour))
-                        throw new IllegalArgumentException("Duplicate colour");
+                    throw new IllegalArgumentException("Duplicate colour");
                 colours.add(c.colour);
                 
                 ScotlandYardPlayer player = new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets);
@@ -158,6 +157,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 // DoubleMove  
                 else if (move instanceof DoubleMove)
                 {
+                    //need some mrx stuff added here
                     DoubleMove doubleMove = (DoubleMove) move;
                     player.location(doubleMove.secondMove().destination());
                     player.removeTicket(doubleMove.firstMove().ticket());
@@ -168,9 +168,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 // PassMove
                 else if (move instanceof PassMove)
                 {
-                    if(currentPlayer == 0)  throw new IllegalArgumentException("oi oi mrX cant pass move");
+                    if(currentPlayer == 0)  throw new IllegalArgumentException("MrX cant pass move");
                 }
-                    
                 currentPlayer++;
                 //if next player isnt in the list reset else call make move on next player
                 if(currentPlayer == playerList.size()) currentPlayer = 0;
@@ -194,7 +193,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if(graph.containsNode(playerLocation)){
                 Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
                 for (Edge<Integer, Transport> edge : edges) {
-                    if (playerList.get(currentPlayer).hasTickets(Ticket.fromTransport(edge.data()))) {
+                    //Checks if player has at least one of given ticket type
+                    if (playerList.get(currentPlayer).hasTickets(Ticket.fromTransport(edge.data()),1)) {
                         //is next spot empty
                         boolean empty = true;
                         for(ScotlandYardPlayer player : playerList)
