@@ -133,10 +133,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public void startRotate() {
-            System.out.println(round);
             ScotlandYardPlayer player = playerList.get(currentPlayer);
-            isGameOver();
-
+            if(isGameOver()) throw new IllegalStateException("Game is Already over");
             
             validMoves = validMoves();
             player.player().makeMove(this, player.location(), validMoves, this);
@@ -149,16 +147,32 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if(!validMoves.contains(move) && doubling == false) throw new IllegalArgumentException("Invalid Move");
             
             ScotlandYardPlayer player = playerList.get(currentPlayer);
-            System.out.println("start" + move +"round: " + round);
             
             // DoubleMove  
             if (move instanceof DoubleMove)
             {
                 DoubleMove doubleMove = (DoubleMove) move;
+                TicketMove firstMove = doubleMove.firstMove();
+                TicketMove secondMove = doubleMove.secondMove();
+                        
+                if(!isRevealRound()){
+                firstMove = new TicketMove(Black,firstMove.ticket(),lastKnownMrX);
+                }
+                else lastKnownMrX = firstMove.destination();
+                    
+                int tmp = round;
+                round++;
+                if(!isRevealRound()){
+                    secondMove = new TicketMove(Black,secondMove.ticket(),lastKnownMrX);
+                }
+                round = tmp;
+                
+                DoubleMove doubleMove2 = new DoubleMove(Black,firstMove,secondMove);
+                
                 doubling = true;
                 for(Spectator spectator : spectators)
                 {
-                    spectator.onMoveMade(this, doubleMove);
+                    spectator.onMoveMade(this, doubleMove2);
                 }
                 accept(doubleMove.firstMove());
                 doubling = false;
@@ -168,13 +182,14 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             
             if (move instanceof TicketMove)
             {
-                System.out.println("tickethere" + move);
                 TicketMove ticketMove = (TicketMove) move;
-
+                
                 //make the move
                 player.location(ticketMove.destination());
+                
                 //If its Mr X and time to reveal update his last known position
                 if(currentPlayer == 0 && isRevealRound()) lastKnownMrX = ticketMove.destination();
+                else if(currentPlayer == 0 && !isRevealRound()) move = new TicketMove(Black,ticketMove.ticket(),lastKnownMrX);
 
                 //remove tickets
                 player.removeTicket(ticketMove.ticket());
@@ -186,13 +201,11 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             // PassMove
             else if (move instanceof PassMove)
             {
-                if (currentPlayer == 0)  mrXTrapped = true;
-                else passMoveCount++;
+                if (currentPlayer != 0) passMoveCount++;
             }
 
 
             if(currentPlayer == 0) {
-                System.out.println("Round++");
                 round++;
                 for(Spectator spectator : spectators)
                 {
@@ -207,27 +220,27 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             
             
             //check if game is over
-            isGameOver();
+            if (!isGameOver()) {
 
-            if(!doubling){
-                currentPlayer++;
-                //if next player isnt in the list reset else call make move on next player
-                System.out.println("Current PLayer" + currentPlayer + "Player list size " + playerList.size());
-                if(currentPlayer == playerList.size())  
-                {
-                    currentPlayer = 0;
-                    passMoveCount = 0;
-                    for(Spectator spectator : spectators)
-                        {
-                            spectator.onRotationComplete(this);
-                        }
-                }
-                else
-                {
-                    ScotlandYardPlayer playernext = playerList.get(currentPlayer);
-                    // initiate the next move
-                    validMoves = validMoves();
-                    playernext.player().makeMove(this, playernext.location(), validMoves, this);
+                if(!doubling){
+                    currentPlayer++;
+                    //if next player isnt in the list reset else call make move on next player
+                    if(currentPlayer == playerList.size())  
+                    {
+                        currentPlayer = 0;
+                        passMoveCount = 0;
+                        for(Spectator spectator : spectators)
+                            {
+                                spectator.onRotationComplete(this);
+                            }
+                    }
+                    else
+                    {
+                        ScotlandYardPlayer playernext = playerList.get(currentPlayer);
+                        // initiate the next move
+                        validMoves = validMoves();
+                        playernext.player().makeMove(this, playernext.location(), validMoves, this);
+                    }
                 }
             }
             
@@ -246,13 +259,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     boolean empty = true;
                     for(ScotlandYardPlayer player : playerList)
                     {
-                        /*
-                        
-                        Is this IF correct logic? 
-                        -> testMrXMovesOmittedIfDestinationOccupiedByDetectives
-                        
-                        
-                        */
                         if(!player.isMrX())
                         {
                             if(player.location()==edge.destination().value()){
@@ -342,7 +348,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 Move Pmove = new PassMove(playerList.get(currentPlayer).colour());
                 validMoves.add(Pmove);
             }
-            System.out.println("endofvalidmoves");
             return Collections.unmodifiableSet(validMoves);
         }
         
@@ -401,9 +406,18 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             if (round > rounds.size()-1 )
                 winners.add(Black);
             
-            //MrX Surrounded
-            if (mrXTrapped)
-                winners = detectives;
+            if(currentPlayer == playerList.size()-1){
+                int tmp = currentPlayer;
+                currentPlayer = 0;
+                Move Pmove = new PassMove(Black);
+                if(validMoves().contains(Pmove)){
+                    mrXTrapped = true;
+                }
+                currentPlayer = tmp;
+
+                //MrX Surrounded
+                if (mrXTrapped) winners = detectives;
+            }
             
             //No Detectives Can Move
             if (passMoveCount == detectives.size())
@@ -412,15 +426,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             int counter = 0;
             int mrXCurrent = playerList.get(0).location();
             
-            Map<Ticket, Integer> emptytickets = new HashMap<>();
-                emptytickets.put(Ticket.Double, 0);
-		emptytickets.put(Ticket.Bus, 0);
-		emptytickets.put(Ticket.Underground, 0);
-		emptytickets.put(Ticket.Taxi, 0);
-		emptytickets.put(Ticket.Secret, 0);
-                
             for (ScotlandYardPlayer player : playerList){
-                if(player.tickets() == emptytickets && !player.isMrX()) counter++;
+                boolean notickets = true;
+                for(Ticket t : player.tickets().keySet())
+                {
+                    if(player.tickets().get(t) != 0) notickets =false;
+                }
+                if(notickets && !player.isMrX()) counter++;
                 
                 //Detective landed On MrX
                 if(!player.isMrX() && player.location() == mrXCurrent)

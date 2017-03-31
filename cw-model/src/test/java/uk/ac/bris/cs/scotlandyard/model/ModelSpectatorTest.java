@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.junit.Test;
 import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import uk.ac.bris.cs.scotlandyard.model.PlayerConfiguration.Builder;
 
@@ -36,6 +37,8 @@ import uk.ac.bris.cs.scotlandyard.model.PlayerConfiguration.Builder;
  */
 @SuppressWarnings("unchecked")
 public class ModelSpectatorTest extends ModelTestBase {
+    
+    
 
 	@Test(expected = NullPointerException.class)
 	public void testRegisterNullSpectatorShouldThrow() {
@@ -353,6 +356,9 @@ public class ModelSpectatorTest extends ModelTestBase {
 		doAnswer(tryChoose(ticket(Red, Taxi, 112)))
 				.when(red.player).makeMove(any(), anyInt(), anySet(), any());
 		game.startRotate();
+                
+                System.out.println(Mockito.mockingDetails(spectator).printInvocations());
+                
 		InOrder order = inOrder(spectator);
 		order.verify(spectator).onMoveMade(notNull(), eq(ticket(Red, Taxi, 112)));
 		order.verify(spectator).onGameOver(notNull(), eq(players(Black)));
