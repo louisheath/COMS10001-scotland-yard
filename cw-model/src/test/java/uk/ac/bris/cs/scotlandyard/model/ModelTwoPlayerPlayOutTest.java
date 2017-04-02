@@ -55,7 +55,6 @@ public class ModelTwoPlayerPlayOutTest extends ModelTestBase {
 				.makeMove(any(), anyInt(), anySet(), isNotNull());
 
 		startRoundUntil(game, 13);
-
 		assertThat(game.isGameOver()).isTrue();
 		// black won at round 13
 		assertThat(game.getWinningPlayers()).containsOnly(Black);

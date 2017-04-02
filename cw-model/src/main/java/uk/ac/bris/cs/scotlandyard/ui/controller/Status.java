@@ -40,7 +40,7 @@ public final class Status implements Controller, GameControl {
 
 	@Override
 	public void onRoundStarted(ScotlandYardView view, int round) {
-		this.round.setText((round + 1) + " of " + view.getRounds().size());
+		this.round.setText((round) + " of " + view.getRounds().size());
 	}
 
 	@Override

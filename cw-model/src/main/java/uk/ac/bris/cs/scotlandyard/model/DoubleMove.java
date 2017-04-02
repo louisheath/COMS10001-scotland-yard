@@ -77,6 +77,7 @@ public class DoubleMove extends Move {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
+                if (!super.equals(o)) return false;
 		DoubleMove that = (DoubleMove) o;
 		return Objects.equals(firstMove, that.firstMove)
 				&& Objects.equals(secondMove, that.secondMove);
@@ -84,7 +85,7 @@ public class DoubleMove extends Move {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(firstMove, secondMove);
+		return Objects.hash(super.hashCode(), firstMove, secondMove);
 	}
 
 	@Override

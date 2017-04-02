@@ -133,7 +133,7 @@ public class ModelValidMoveTest extends ModelTestBase {
 	@Test
 	public void testDetectiveMoveNotOmittedIfDestinationOccupiedByMrX() {
 		PlayerConfiguration black = of(Black, 86);
-		PlayerConfiguration blue = of(Green, 85);
+		PlayerConfiguration blue = of(Blue, 85);
 
 		doAnswer(tryChoose(ticket(Black, Taxi, 103)))
 				.when(black.player).makeMove(any(), anyInt(), anySet(), any());

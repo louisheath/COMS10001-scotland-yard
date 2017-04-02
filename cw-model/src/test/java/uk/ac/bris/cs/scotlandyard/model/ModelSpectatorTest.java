@@ -38,7 +38,7 @@ import uk.ac.bris.cs.scotlandyard.model.PlayerConfiguration.Builder;
 @SuppressWarnings("unchecked")
 public class ModelSpectatorTest extends ModelTestBase {
     
-    
+   
 
 	@Test(expected = NullPointerException.class)
 	public void testRegisterNullSpectatorShouldThrow() {
@@ -357,7 +357,7 @@ public class ModelSpectatorTest extends ModelTestBase {
 				.when(red.player).makeMove(any(), anyInt(), anySet(), any());
 		game.startRotate();
                 
-                System.out.println(Mockito.mockingDetails(spectator).printInvocations());
+                //System.out.println(Mockito.mockingDetails(spectator).printInvocations());
                 
 		InOrder order = inOrder(spectator);
 		order.verify(spectator).onMoveMade(notNull(), eq(ticket(Red, Taxi, 112)));

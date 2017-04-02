@@ -260,7 +260,7 @@ public abstract class ModelTestBase implements ScotlandYardGameFactory {
 	}
 
 	/**
-	 * Creates a new game with 24 rounds and the default graph
+	 * Creates a new game with 23 rounds and the default graph
 	 * 
 	 * @param mrX Mr.X
 	 * @param firstDetective first detective

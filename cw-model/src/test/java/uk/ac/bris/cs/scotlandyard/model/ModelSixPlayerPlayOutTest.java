@@ -18,6 +18,8 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.Taxi;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
 
 import org.junit.Test;
+import org.mockito.Mockito;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test the model with real recorded games that was carried out by hand using a
@@ -117,6 +119,7 @@ public class ModelSixPlayerPlayOutTest extends ModelTestBase {
 		PlayerConfiguration white = of(White, 155);
 		PlayerConfiguration yellow = of(Yellow, 117);
 		ScotlandYardGame game = createGame(black, blue, green, red, white, yellow);
+               
 		doAnswer(tryChoose(ticket(Black, Taxi, 46)))
 				.doAnswer(tryChoose(x2(Black, Taxi, 45, Secret, 58)))
 				.doAnswer(tryChoose(x2(Black, Taxi, 45, Secret, 58)))

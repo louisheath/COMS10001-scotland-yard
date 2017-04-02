@@ -201,7 +201,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             // PassMove
             else if (move instanceof PassMove)
             {
-                if (currentPlayer != 0) passMoveCount++;
+                //if (currentPlayer != 0) passMoveCount++;
             }
 
 
@@ -228,7 +228,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     if(currentPlayer == playerList.size())  
                     {
                         currentPlayer = 0;
-                        passMoveCount = 0;
+                        //not needed passMoveCount = 0;
                         for(Spectator spectator : spectators)
                             {
                                 spectator.onRotationComplete(this);
@@ -397,36 +397,50 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	public boolean isGameOver() {
             boolean isGameOver = false;
             
-            //Rounds Over
-            /*
-            
-            Changed this to -1
-            
-            */
-            if (round > rounds.size()-1 )
-                winners.add(Black);
-            
             if(currentPlayer == playerList.size()-1){
+                
+                //Rounds Over
+                if (round > rounds.size()-1 )
+                    winners.add(Black);
+
                 int tmp = currentPlayer;
-                currentPlayer = 0;
+                
+                /*currentPlayer = 0;
                 Move Pmove = new PassMove(Black);
                 if(validMoves().contains(Pmove)){
-                    mrXTrapped = true;
+                    //MrX Surrounded
+                    winners = detectives;
+                }*/
+                int counter = 0;
+                for(int i = 0; i<playerList.size(); i++){
+                    currentPlayer = i;
+                    Move Pmove = new PassMove(playerList.get(i).colour());
+                    if(validMoves().contains(Pmove)){
+                        //MrX Has No Moves
+                        if(i==0) winners = detectives;
+                        //One of the detectives cant move
+                        counter++;
+                    }
+                    else{
+                        //If a detective can move break loop
+                        if(i!=0) break;
+                    }
                 }
+                //No detectives can Move
+                if (counter == detectives.size()) winners.add(Black);
                 currentPlayer = tmp;
 
-                //MrX Surrounded
-                if (mrXTrapped) winners = detectives;
             }
             
-            //No Detectives Can Move
-            if (passMoveCount == detectives.size())
-                winners.add(Black);
+            //No Detectives Can Move - not needed
+            //if (passMoveCount == detectives.size())
+             //   winners.add(Black);
             
             int counter = 0;
             int mrXCurrent = playerList.get(0).location();
             
             for (ScotlandYardPlayer player : playerList){
+                
                 boolean notickets = true;
                 for(Ticket t : player.tickets().keySet())
                 {

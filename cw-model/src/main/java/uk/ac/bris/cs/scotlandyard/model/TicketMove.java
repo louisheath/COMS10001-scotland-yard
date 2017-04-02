@@ -46,13 +46,14 @@ public class TicketMove extends Move {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
+                if (!super.equals(o)) return false;
 		TicketMove that = (TicketMove) o;
 		return destination == that.destination && ticket == that.ticket;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(ticket, destination);
+		return Objects.hash(super.hashCode(), ticket, destination);
 	}
 
 	@Override
