@@ -53,7 +53,7 @@ public class Heathkins implements PlayerFactory {
                             }
                         }
                     }
-			// picks best move
+			// picks best movegit 
 			callback.accept(bestmove);
 
 		}
@@ -94,11 +94,29 @@ public class Heathkins implements PlayerFactory {
                     }
                 }  
             }
-            
-            
-            
-            //Dijkstra's algorithm
+            int[] distance = new int[graph.size()+1];
             int totaldistance = 0;
+            //gives you shortest distance to each node from starting location
+            distance = Dijkstras(location, graph);
+            
+            //Adds up the distance of all the detectives from node.
+            for(Colour player : view.getPlayers()){
+                if(player.isDetective())
+                {
+                    totaldistance += distance[view.getPlayerLocation(player)];
+                }
+            }
+            
+            
+            //calc score based on weighted combination of above
+            score = edgescore + (totaldistance/(view.getPlayers().size()-1)*15);
+            //check if gameover?? if we can and won score massive if loss score 0
+            return score;
+        }
+            
+        private static int[] Dijkstras(int location, Graph<Integer, Transport> graph){
+            //Dijkstra's algorithm
+            
             List <Node<Integer>> UnSettledNodes = new ArrayList<>();
             UnSettledNodes.addAll(graph.getNodes());
             List <Node<Integer>> SettledNodes = new ArrayList<>();
@@ -139,19 +157,8 @@ public class Heathkins implements PlayerFactory {
                 SettledNodes.addAll(toAdd);
                 UnSettledNodes.removeAll(toAdd);
             }
-            
-            //Adds up the distance of all the detectives from node.
-            for(Colour player : view.getPlayers()){
-                if(player.isDetective())
-                {
-                    totaldistance += distance[view.getPlayerLocation(player)];
-                }
-            }
-            
-            
-            //calc score based on weighted combination of above
-            score = edgescore + (totaldistance/(view.getPlayers().size()-1)*15);
-            //check if gameover?? if we can and won score massive if loss score 0
-            return score;
+            return distance;
         }
+            
+            
 }
