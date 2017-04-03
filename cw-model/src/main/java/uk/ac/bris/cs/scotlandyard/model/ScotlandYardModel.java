@@ -258,7 +258,6 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
                 //For each path check if the destination is empty then check if they have the tickets needed to follow it
                 for (Edge<Integer, Transport> edge : edges) {
-                    
                     //is next spot empty
                     boolean empty = true;
                     for(ScotlandYardPlayer player : playerList)
