@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
@@ -13,24 +14,21 @@ import uk.ac.bris.cs.scotlandyard.ai.ManagedAI;
 import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
-import uk.ac.bris.cs.scotlandyard.model.DoubleMove;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.PassMove;
 import uk.ac.bris.cs.scotlandyard.model.Player;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Boat;
 import static uk.ac.bris.cs.scotlandyard.model.Transport.Bus;
 import static uk.ac.bris.cs.scotlandyard.model.Transport.Taxi;
 import static uk.ac.bris.cs.scotlandyard.model.Transport.Underground;
 
-// TODO name the AI
-@ManagedAI("Heathkins")
-public class Heathkins implements PlayerFactory {
 
+@ManagedAI("HeathkinsDetect")
+public class HeathkinsDetect implements PlayerFactory {
+        
 	// TODO create a new player here
 	@Override
 	public Player createPlayer(Colour colour) {
@@ -39,36 +37,54 @@ public class Heathkins implements PlayerFactory {
 
 	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
+            
+            private final Random random = new Random();
 
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback) {
-                    int best = -9999;
-                    Move bestmove = new PassMove(Black);
-                    for(Move move : moves){
-                        if (move instanceof TicketMove){
-                            TicketMove tmove = (TicketMove) move;
-                            int tmp = scorenode(view,tmove.destination());
-                            if(tmp>best){
-                                best = tmp;
-                                bestmove = move;  
-                            } 
-                        }
+                    Colour colour = view.getCurrentPlayer();
+                    Move bestmove = new PassMove(colour);
+                    Graph<Integer, Transport> graph = view.getGraph();
+                    int MrXLastKnown = view.getPlayerLocation(Black);
+                    int rounds = 0;
+                    //Work out how many rounds since MrX Surfaced
+                    while(!view.getRounds().get(view.getCurrentRound()-rounds))
+                    {
+                        rounds++;
+                        if(view.getCurrentRound()-rounds == 0) break;
                     }
-                    for(Move move : moves){
-                        if (move instanceof DoubleMove){
-                            DoubleMove Dmove = (DoubleMove) move;
-                            int tmp = scorenode(view,Dmove.finalDestination());
-                            //not sure on these numbers basically want to conserve double moves for when they make big difference
-                            if(tmp > best+40 || tmp > best*2.5){
-                                best = tmp;
-                                bestmove = move;
+                    
+                    
+                    
+                    //Get to good transport links MrX hasnt surfaced yet
+                    if(view.getCurrentRound() == rounds)
+                    {
+                        int best = -9999;
+                        for(Move move : moves){
+                            if (move instanceof TicketMove){
+                                TicketMove tmove = (TicketMove) move;
+                                int tmp = scorenode(view,tmove.destination());
+                                if(tmp>best){
+                                    best = tmp;
+                                    bestmove = move;
+                                }
                             }
                         }
+			
                     }
-                        System.out.println("Best:"+best);
-			// picks best move
-			callback.accept(bestmove);
-
+                    else bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                    
+                    
+                    
+                    //Where could MrX be?
+                    List<Node> possibleLocations = new ArrayList<>();
+                    
+                    
+                    
+                            
+                    // picks best movegit 
+                    callback.accept(bestmove);
+                    
 		}
 	}
         
@@ -96,36 +112,20 @@ public class Heathkins implements PlayerFactory {
                     } 
 
                     if (empty) {
-                        if (view.getPlayerTickets(Black, fromTransport(edge.data()))>0);
+                        if (view.getPlayerTickets(view.getCurrentPlayer(), fromTransport(edge.data()))>0);
                         {
                             switch(edge.data()){
-                                case Taxi: edgescore = edgescore + 1; break;
-                                case Bus: edgescore = edgescore + 3; break;
-                                case Underground: edgescore = edgescore + 5; break;
-                                case Boat: edgescore = edgescore + 9; break;
+                                case Taxi: edgescore+=1;
+                                case Bus: edgescore+=3;
+                                case Underground: edgescore+=6;
                             }
                         }
                     }
                 }  
             }
-            int[] distance = new int[graph.size()+1];
-            int totaldistance = 0;
-            //gives you shortest distance to each node from starting location
-            distance = Dijkstras(location, graph);
-            
-            //Adds up the distance of all the detectives from node.
-            for(Colour player : view.getPlayers()){
-                if(player.isDetective())
-                {
-                    //discourage going 1 move away from detectives or 2
-                    if(distance[view.getPlayerLocation(player)] < 2) totaldistance -= 10;
-                    else if(distance[view.getPlayerLocation(player)] < 3) totaldistance -= 5;
-                    totaldistance += distance[view.getPlayerLocation(player)];
-                }
-            }
-            
+           
             //calc score based on weighted combination of above
-            score = edgescore + (totaldistance/(view.getPlayers().size()-1)*20);
+            score = edgescore;
             //check if gameover?? if we can and won score massive if loss score 0
             return score;
         }
@@ -153,11 +153,8 @@ public class Heathkins implements PlayerFactory {
                 for(Node<Integer> node :SettledNodes){
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(node);
                     for (Edge<Integer, Transport> edge : edges) {
-                        //Dont count boat edges as detectives can use them
-                        if(edge.data()!=Boat){
-                            if(!SettledNodes.contains(edge.destination())){
-                                if(distance[edge.destination().value()] > distance[node.value()] + 1) distance[edge.destination().value()] = distance[node.value()] + 1;
-                            }
+                        if(!SettledNodes.contains(edge.destination())){
+                            if(distance[edge.destination().value()] > distance[node.value()] + 1) distance[edge.destination().value()] = distance[node.value()] + 1;
                         }
                     }
                 }
