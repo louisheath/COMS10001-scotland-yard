@@ -58,19 +58,30 @@ public class Heathkinsv4 implements PlayerFactory {
                     
                     //Create Set Of Move Nodes
                     Set<MoveNode> nextMovesNodes = new HashSet<>();
-                    for(Move move : moves){
-                        if (move instanceof TicketMove){
-                            TicketMove tmove = (TicketMove) move;
-                            if(scorer.scorenode(view,tmove.destination(),0)>30){
-                                MoveNode node = new MoveNode(move);
-                                nextMovesNodes.add(node);
+                    
+                    //If in rubbish position and we have double move
+                    if(scorer.scorenode(view, location, 0) < 40 && view.getPlayerTickets(Black, Double) > 0){
+                        //use double Move
+                        for(Move move : moves){
+                            if (move instanceof DoubleMove){
+                                DoubleMove Dmove = (DoubleMove) move;
+                                if(scorer.scorenode(view,Dmove.finalDestination(),0)>10){
+                                    MoveNode node = new MoveNode(move);
+                                    nextMovesNodes.add(node);
+                                }
                             }
                         }
-                        else if (move instanceof DoubleMove){
-                            DoubleMove Dmove = (DoubleMove) move;
-                            if(scorer.scorenode(view,Dmove.finalDestination(),0)>30){
-                                MoveNode node = new MoveNode(move);
-                                nextMovesNodes.add(node);
+                    }
+                    else
+                    {
+                        //use ticket move
+                        for(Move move : moves){
+                            if (move instanceof TicketMove){
+                                TicketMove tmove = (TicketMove) move;
+                                if(scorer.scorenode(view,tmove.destination(),0)>10){
+                                    MoveNode node = new MoveNode(move);
+                                    nextMovesNodes.add(node);
+                                }
                             }
                         }
                     }
