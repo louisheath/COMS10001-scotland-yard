@@ -36,13 +36,14 @@ public class Heathkinsv4 implements PlayerFactory {
 
 	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
+            //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look
             int depth = 3; 
             //Best Score and node at depth
             int best = -9999; 
             MoveNode bestNode;
-            //Save doubleMoves to increase efficiency
+            //Save doubleMoves in variable to increase efficiency
             Set<MoveNode> doubleMoves = new HashSet<>();
             //Instanstiate Scorer Object
             Scorer scorer = new Scorer();
@@ -50,7 +51,9 @@ public class Heathkinsv4 implements PlayerFactory {
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
                     System.out.println("Start Location Is: "+location);
                     System.out.println("Score of Start Location: " + scorer.scorenode(view, location, 0));
+                    //make sure best is reset for new move
                     best = -9999;
+                    //Initialise bestmove to a random move
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     System.out.println("Random Move is: "+bestmove);
                     
@@ -65,6 +68,7 @@ public class Heathkinsv4 implements PlayerFactory {
                             bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                         }
                         System.out.println("Double Move It: "+bestmove);
+                        //Add all double moves to our MoveNode Set
                         for(Move move : moves){
                             if (move instanceof DoubleMove){
                                 DoubleMove Dmove = (DoubleMove) move;
@@ -82,6 +86,7 @@ public class Heathkinsv4 implements PlayerFactory {
                         {
                             bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                         }
+                        //Add all Ticket moves to our MoveNode Set
                         for(Move move : moves){
                             if (move instanceof TicketMove){
                                 TicketMove tmove = (TicketMove) move;
@@ -131,7 +136,9 @@ public class Heathkinsv4 implements PlayerFactory {
             private Set<MoveNode> nextMovesNodes(Set<MoveNode> moves, ScotlandYardView view, int future) {
                 Graph<Integer, Transport> graph = view.getGraph();
                 Set<MoveNode> nextMovesNodes = new HashSet<>();
+                //For all moves in set
                 for(MoveNode move : moves){
+                    //Find where move ends up
                     int playerLocation = 0;
                     if (move.move() instanceof TicketMove){
                         TicketMove tmove = (TicketMove) move.move();
@@ -141,7 +148,6 @@ public class Heathkinsv4 implements PlayerFactory {
                         DoubleMove Dmove = (DoubleMove) move.move();
                         playerLocation = Dmove.finalDestination();                   
                     }
-            
                     if(graph.containsNode(playerLocation)){
                         //Find all paths from current location
                         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
@@ -161,22 +167,24 @@ public class Heathkinsv4 implements PlayerFactory {
                                 if(score > 0){
                                     if (view.getPlayerTickets(Black, Ticket.fromTransport(edge.data())) >= 1){
                                         TicketMove tmove = new TicketMove(Black,Ticket.fromTransport(edge.data()),edge.destination().value());
+                                        //Set up node and make them point correctly
                                         MoveNode node = new MoveNode(tmove);
                                         node.setprevious(move);
                                         move.setnext(node);
                                         nextMovesNodes.add(node);
-                                        //Are we at final depth
+                                        //Are we at final depth - if so is it better than a previous soln - if yes store it
                                         if(this.depth==future+1) {
                                             if(score > this.best){ this.best = score; this.bestNode = node; }
                                         }
                                     }
                                     if (view.getPlayerTickets(Black,Secret) >= 1){
                                         TicketMove tmove = new TicketMove(Black,Secret,edge.destination().value());
+                                        //Set up node and make them point correctly
                                         MoveNode node = new MoveNode(tmove);
                                         node.setprevious(move);
                                         move.setnext(node);
                                         nextMovesNodes.add(node);
-                                        //Are we at final depth
+                                        //Are we at final depth - if so is it better than a previous soln - if yes store it
                                         if(this.depth==future+1) {
                                             if(score > this.best){ this.best = score; this.bestNode = node; }
                                         }
