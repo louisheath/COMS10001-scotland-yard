@@ -20,13 +20,8 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Double;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Boat;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Bus;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Taxi;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Underground;
 
 
 // TODO name the AI
@@ -57,10 +52,6 @@ public class Heathkinsv4 implements PlayerFactory {
                     System.out.println("Score of Start Location: " + scorer.scorenode(view, location, 0));
                     best = -9999;
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                    while(bestmove instanceof DoubleMove)
-                    {
-                        bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                    }
                     System.out.println("Random Move is: "+bestmove);
                     
                     //Create Set Of Move Nodes
@@ -69,6 +60,10 @@ public class Heathkinsv4 implements PlayerFactory {
                     //If in rubbish position and we have double move
                     if(scorer.scorenode(view, location, 0) < 0 && view.getPlayerTickets(Black, Double) > 0){
                         //use Double Move
+                        while(bestmove instanceof TicketMove)
+                        {
+                            bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                        }
                         System.out.println("Double Move It: "+bestmove);
                         for(Move move : moves){
                             if (move instanceof DoubleMove){
@@ -83,6 +78,10 @@ public class Heathkinsv4 implements PlayerFactory {
                     else
                     {
                         //use Ticket Move
+                        while(bestmove instanceof DoubleMove)
+                        {
+                            bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                        }
                         for(Move move : moves){
                             if (move instanceof TicketMove){
                                 TicketMove tmove = (TicketMove) move;
