@@ -3,13 +3,11 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
-import uk.ac.bris.cs.gamekit.graph.Node;
 
 import uk.ac.bris.cs.scotlandyard.ai.ManagedAI;
 import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
@@ -17,7 +15,6 @@ import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.DoubleMove;
 import uk.ac.bris.cs.scotlandyard.model.Move;
-import uk.ac.bris.cs.scotlandyard.model.PassMove;
 import uk.ac.bris.cs.scotlandyard.model.Player;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
@@ -31,9 +28,10 @@ import static uk.ac.bris.cs.scotlandyard.model.Transport.Bus;
 import static uk.ac.bris.cs.scotlandyard.model.Transport.Taxi;
 import static uk.ac.bris.cs.scotlandyard.model.Transport.Underground;
 
+
 // TODO name the AI
-@ManagedAI("Heathkinsv2")
-public class Heathkinsv2 implements PlayerFactory {
+@ManagedAI("Heathkinsv3")
+public class Heathkinsv3 implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
@@ -44,10 +42,16 @@ public class Heathkinsv2 implements PlayerFactory {
 	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
             private final Random random = new Random();
-
+            //How many moves ahead to look
+            int depth = 1; 
+            //Best Score and node at depth
+            int best = -9999; 
+            MoveNode bestNode;
+            //Save doubleMoves to increase efficiency
+            Set<MoveNode> doubleMoves = new HashSet<>();
+            static Dijkstras dijkstras = new Dijkstras();
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
-                    int best = -9999;
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     Graph<Integer, Transport> graph = view.getGraph();
                     
@@ -56,58 +60,65 @@ public class Heathkinsv2 implements PlayerFactory {
                     for(Move move : moves){
                         if (move instanceof TicketMove){
                             TicketMove tmove = (TicketMove) move;
-                            if(scorenode(view,tmove.destination())>30){
+                            if(scorenode(view,tmove.destination(),0)>30){
+                                MoveNode node = new MoveNode(move);
+                                nextMovesNodes.add(node);
+                            }
+                        }
+                        else if (move instanceof DoubleMove){
+                            DoubleMove Dmove = (DoubleMove) move;
+                            if(scorenode(view,Dmove.finalDestination(),0)>30){
                                 MoveNode node = new MoveNode(move);
                                 nextMovesNodes.add(node);
                             }
                         }
                     }
-                    int depth = 3;                   
-                    //Node Stuff
-                    for(int i = 0; i<depth ;i++){
-                        nextMovesNodes = nextMovesNodes(nextMovesNodes,view);
+                    
+                    bestNode = new MoveNode(bestmove);                  
+                    //Node Stuff - explore tree to depth - sets best node correctly
+                    for(int i = 1; i <= depth; i++){
+                        nextMovesNodes = nextMovesNodes(nextMovesNodes,view,depth);
                     }
-                    MoveNode bestNode = new MoveNode(bestmove);
-                    for(MoveNode node : nextMovesNodes){
-                        Move move = node.move();
-                        if (move instanceof TicketMove){
-                            TicketMove tmove = (TicketMove) move;
-                            int tmp = scorenode(view,tmove.destination());
-                            if(tmp>best){
-                                best = tmp;
-                                bestNode = node;
-                            } 
-                        } 
-                    }
-                    for(MoveNode node : nextMovesNodes){
+                    System.out.println("Here");
+                                      
+                    //find best end node doublemove - use if substantially better
+                    for(MoveNode node : doubleMoves){
                         Move move = node.move();
                         if (move instanceof DoubleMove){
                             DoubleMove Dmove = (DoubleMove) move;
-                            int tmp = scorenode(view,Dmove.finalDestination());
+                            int tmp = scorenode(view,Dmove.finalDestination(),depth);
                             //not sure on these numbers basically want to conserve double moves for when they make big difference
-                            if(tmp > best+40 || tmp > best*2.5){
+                            if(tmp > best+50){
                                 best = tmp;
                                 bestNode = node;
                             }
                         }
                     }
-                    
+                    //find first move to get to endnode
                     for(int i = 0; i<depth ;i++){
+                        System.out.println("Move  "+ bestNode.move());
                         bestNode = bestNode.previous();
                     }
                     bestmove = bestNode.move();
                     
+                    int thismove = 0;                    
+                    if (bestmove instanceof TicketMove){
+                        thismove = scorenode(view,((TicketMove) bestmove).destination(),0);
+                    }
+                    if (bestmove instanceof DoubleMove){
+                        thismove = scorenode(view,((DoubleMove) bestmove).finalDestination(),0);
+                    }
                     
-                    System.out.println("3 Move Best:"+best+ "Move  "+ bestmove);
-                                        
-                    System.out.println("Best:"+best);
+                    System.out.println(depth + " Move Best Score:"+best);
+                    System.out.println("This Move  "+ bestmove);
+                    System.out.println("This Move score: :"+thismove);
+                    
 		    // picks best move
 		    callback.accept(bestmove);
 
 		}              
                 
-            private Set<MoveNode> nextMovesNodes(Set<MoveNode> moves, ScotlandYardView view) {
-                int bestsofar = 0;
+            private Set<MoveNode> nextMovesNodes(Set<MoveNode> moves, ScotlandYardView view, int depth) {
                 Graph<Integer, Transport> graph = view.getGraph();
                 Set<MoveNode> nextMovesNodes = new HashSet<>();
                 for(MoveNode move : moves){
@@ -135,15 +146,18 @@ public class Heathkinsv2 implements PlayerFactory {
                             } 
 
                             if (empty) {
-                                int score = scorenode(view,edge.destination().value());
-                                if(score >= bestsofar){
-                                    bestsofar = score;
+                                int score = scorenode(view,edge.destination().value(),depth);
+                                if(score > 60){
                                     if (view.getPlayerTickets(Black, Ticket.fromTransport(edge.data())) >= 1){
                                         TicketMove tmove = new TicketMove(Black,Ticket.fromTransport(edge.data()),edge.destination().value());
                                         MoveNode node = new MoveNode(tmove);
                                         node.setprevious(move);
                                         move.setnext(node);
                                         nextMovesNodes.add(node);
+                                        //Are we at final depth
+                                        if(this.depth==depth) {
+                                            if(score > this.best){ this.best = score; this.bestNode = node; }
+                                        }
                                     }
                                     if (view.getPlayerTickets(Black,Secret) >= 1){
                                         TicketMove tmove = new TicketMove(Black,Secret,edge.destination().value());
@@ -151,13 +165,17 @@ public class Heathkinsv2 implements PlayerFactory {
                                         node.setprevious(move);
                                         move.setnext(node);
                                         nextMovesNodes.add(node);
+                                        //Are we at final depth
+                                        if(this.depth==depth) {
+                                            if(score > this.best){ this.best = score; this.bestNode = node; }
+                                        }
                                     }
                                 }
                             }   
                         }  
                     }
                 }
-                if(view.getPlayerTickets(Black, Double)>0){
+                if(view.getPlayerTickets(Black, Double) >= 1){
                     ArrayList<MoveNode> toAdd = new ArrayList<>();
                     for (MoveNode move : nextMovesNodes){
                         TicketMove firstMove = (TicketMove) move.move();
@@ -175,9 +193,8 @@ public class Heathkinsv2 implements PlayerFactory {
 
                             if (empty)
                             {
-                                int score = scorenode(view,edge.destination().value());
-                                if(score >= bestsofar){
-                                    bestsofar = score;
+                                int score = scorenode(view,edge.destination().value(),depth);
+                                if(score > 80){
                                     //checks MrX has both tickets needed
                                     int ticketsNeeded = 1;
                                     if (firstMove.ticket() == Ticket.fromTransport(edge.data())) ticketsNeeded = 2;
@@ -190,6 +207,7 @@ public class Heathkinsv2 implements PlayerFactory {
                                         node.setprevious(move.previous());
                                         move.previous().setnext(node);
                                         toAdd.add(node);
+                                        
                                     }
 
                                     if (view.getPlayerTickets(Black, Secret) >= 2 && firstMove.ticket() == Secret
@@ -206,12 +224,13 @@ public class Heathkinsv2 implements PlayerFactory {
                             }
                         } 
                     }
+                    if(this.depth == depth)this.doubleMoves.addAll(toAdd);
                     nextMovesNodes.addAll(toAdd);
                 }
                 return nextMovesNodes;
             }   
         
-        private static int scorenode(ScotlandYardView view, int location){
+        private static int scorenode(ScotlandYardView view, int location, int depth){
             int score = 0;
             int edgescore = 0;
             Graph<Integer, Transport> graph = view.getGraph();
@@ -222,100 +241,35 @@ public class Heathkinsv2 implements PlayerFactory {
                 Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(location));
                 //For each path check if the destination is empty then check if they have the tickets needed to follow it
                 for (Edge<Integer, Transport> edge : edges) {
-                    //is next spot empty
-                    boolean empty = true;
-                    for(Colour player : view.getPlayers())
+                    if (view.getPlayerTickets(Black, fromTransport(edge.data()))>0);
                     {
-                        if(player!=Black)
-                        {
-                            if(view.getPlayerLocation(player)==edge.destination().value()){
-                                empty = false;
-                            }
-                        }
-                    } 
-
-                    if (empty) {
-                        if (view.getPlayerTickets(Black, fromTransport(edge.data()))>0);
-                        {
-                            switch(edge.data()){
-                                case Taxi: edgescore = edgescore + 1; break;
-                                case Bus: edgescore = edgescore + 6; break;
-                                case Underground: edgescore = edgescore + 10; break;
-                                case Boat: edgescore = edgescore + 15; break;
-                            }
+                        switch(edge.data()){
+                            case Taxi: edgescore = edgescore + 1; break;
+                            case Bus: edgescore = edgescore + 6; break;
+                            case Underground: edgescore = edgescore + 10; break;
+                            case Boat: edgescore = edgescore + 15; break;
                         }
                     }
-                }  
-            }
-            int[] distance = new int[graph.size()+1];
+                }
+            }  
             int totaldistance = 0;
             //gives you shortest distance to each node from starting location
-            distance = Dijkstras(location, graph);
-            
+            int[] distance = dijkstras.calculate(location, graph);
             //Adds up the distance of all the detectives from node.
             for(Colour player : view.getPlayers()){
                 if(player.isDetective())
                 {
-                    //discourage going 1 move away from detectives or 2
-                    if(distance[view.getPlayerLocation(player)] < 2) totaldistance -= 10;
-                    else if(distance[view.getPlayerLocation(player)] < 3) totaldistance -= 5;
-                    totaldistance += distance[view.getPlayerLocation(player)];
+                    //discourage going 1 move away from detectives
+                    if(distance[view.getPlayerLocation(player)]-depth < 2) totaldistance -= 50;
+                    else totaldistance += distance[view.getPlayerLocation(player)]-depth;
                 }
             }
-            
+            //If game over in future situation and MrX isnt one move away from a detective set score large so will be chosen
+            if(view.getRounds().size()<= view.getCurrentRound()+depth && totaldistance > view.getPlayers().size()) score = 9999;
             //calc score based on weighted combination of above
-            score = edgescore + (totaldistance/(view.getPlayers().size()-1)*20);
+            else score = edgescore + (totaldistance/(view.getPlayers().size()-1)*20);
             //check if gameover?? if we can and won score massive if loss score 0
             return score;
-        }
-            
-        private static int[] Dijkstras(int location, Graph<Integer, Transport> graph){
-            //Dijkstra's algorithm
-            
-            List <Node<Integer>> UnSettledNodes = new ArrayList<>();
-            UnSettledNodes.addAll(graph.getNodes());
-            List <Node<Integer>> SettledNodes = new ArrayList<>();
-            
-            int[] distance = new int[UnSettledNodes.size()+1];
-            //Add Starting Point
-            SettledNodes.add(graph.getNode(location));
-            UnSettledNodes.remove(graph.getNode(location));
-            distance[location]=0;
-            
-            for(Node<Integer> node : UnSettledNodes)
-            {
-                distance[node.value()] = 9999;
-            }
-
-            while(!UnSettledNodes.isEmpty()){
-                
-                for(Node<Integer> node :SettledNodes){
-                    Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(node);
-                    for (Edge<Integer, Transport> edge : edges) {
-                        //Dont count boat edges as detectives can use them
-                        if(edge.data()!=Boat){
-                            if(!SettledNodes.contains(edge.destination())){
-                                if(distance[edge.destination().value()] > distance[node.value()] + 1) distance[edge.destination().value()] = distance[node.value()] + 1;
-                            }
-                        }
-                    }
-                }
-                List <Node<Integer>> toAdd = new ArrayList<>();
-                int min = 9999;
-                for(Node<Integer> node :UnSettledNodes){
-                    if(distance[node.value()] < min){
-                        min = distance[node.value()];
-                    }
-                }
-                for(Node<Integer> node :UnSettledNodes){
-                    if(distance[node.value()] == min){
-                        toAdd.add(node);
-                    }
-                }
-                SettledNodes.addAll(toAdd);
-                UnSettledNodes.removeAll(toAdd);
-            }
-            return distance;
-        }            
+        }          
     }
 }
