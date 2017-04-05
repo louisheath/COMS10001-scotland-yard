@@ -43,7 +43,7 @@ public class Heathkinsv3 implements PlayerFactory {
 	private static class MyAI implements Player {
             private final Random random = new Random();
             //How many moves ahead to look
-            int depth = 1; 
+            int depth = 2; 
             //Best Score and node at depth
             int best = -9999; 
             MoveNode bestNode;
@@ -77,7 +77,7 @@ public class Heathkinsv3 implements PlayerFactory {
                     bestNode = new MoveNode(bestmove);                  
                     //Node Stuff - explore tree to depth - sets best node correctly
                     for(int i = 1; i <= depth; i++){
-                        nextMovesNodes = nextMovesNodes(nextMovesNodes,view,depth);
+                        nextMovesNodes = nextMovesNodes(nextMovesNodes,view,i);
                     }
                     System.out.println("Here");
                                       

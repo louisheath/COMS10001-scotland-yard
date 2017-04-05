@@ -37,7 +37,7 @@ public class Scorer {
                             case Taxi: edgescore = edgescore + 1; break;
                             case Bus: edgescore = edgescore + 6; break;
                             case Underground: edgescore = edgescore + 10; break;
-                            case Boat: edgescore = edgescore + 15; break;
+                            case Boat: edgescore = edgescore + 40; break;
                         }
                     }
                 }
@@ -50,14 +50,14 @@ public class Scorer {
                 if(player.isDetective())
                 {
                     //discourage going 1 move away from detectives
-                    if(distance[view.getPlayerLocation(player)]-depth < 2) totaldistance -= 50;
+                    if(distance[view.getPlayerLocation(player)] < 2) totaldistance -= 50;
                     else totaldistance += distance[view.getPlayerLocation(player)]-depth;
                 }
             }
             //If game over in future situation and MrX isnt one move away from a detective set score large so will be chosen
             if(view.getRounds().size()<= view.getCurrentRound()+depth && totaldistance > view.getPlayers().size()) score = 9999;
             //calc score based on weighted combination of above
-            else score = edgescore + (totaldistance/(view.getPlayers().size()-1)*20);
+            else score = edgescore + (totaldistance/(view.getPlayers().size()-1)*30);
             //check if gameover?? if we can and won score massive if loss score 0
             return score;
         }
