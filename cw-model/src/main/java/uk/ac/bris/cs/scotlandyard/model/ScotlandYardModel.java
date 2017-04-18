@@ -31,18 +31,18 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         List<Boolean> rounds;
         // The map
         Graph<Integer, Transport> graph;
-        //List Of all Players - MrX at index 0
+        // List of all players - MrX at index 0
         List<ScotlandYardPlayer> playerList = new ArrayList<>();
         //Keeps track of Game state - Could combine somehow??
-        int currentPlayer, round, lastKnownMrX; //not needed anymore passMoveCount = 0;
-        //More Game State
-        boolean mrXTrapped, doubling = false;
+        int currentPlayer, round, lastKnownMrX = 0;
+        // Boolean indicating whether the current move is the first in a double
+        boolean doubling = false;
 
         Set<Colour> winners = new HashSet<>();
         Set<Colour> detectives = new HashSet<>();
         private Collection<Spectator> spectators = new HashSet<>();
         
-        //validMoves set to store validMoves in to reduce number of calls
+        // validMoves set to store validMoves in to reduce number of calls
         Set<Move> validMoves = new HashSet<>();
         
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
@@ -51,29 +51,32 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
             
             this.rounds = requireNonNull(rounds);
             if (rounds.isEmpty()) throw new IllegalArgumentException("Empty rounds");
-         
             
             this.graph = requireNonNull(graph);
             if (graph.isEmpty()) throw new IllegalArgumentException("Empty graph");
             
-            // Check if MrX is Black
+            // Confirm that MrX is Black
             if (mrX.colour.isDetective()) throw new IllegalArgumentException("MrX should be Black");
 	
-            // Make a list of configurations (players)
+            // Make a list of player configurations..
             ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+            // ..and populate it
             configurations.add(mrX);
             configurations.add(firstDetective);
             detectives.add(firstDetective.colour);
-            for (PlayerConfiguration configuration : restOfTheDetectives){
-               configurations.add(requireNonNull(configuration));
-               detectives.add(configuration.colour);
+            for (PlayerConfiguration d : restOfTheDetectives){
+               configurations.add(requireNonNull(d));
+               detectives.add(d.colour);
             }
             
             Set<Integer> locations = new HashSet<>();
             Set<Colour> colours = new HashSet<>();
             int numTicketTypes;
             
-            // for each player, and for each of their tickets
+            /*
+               Check that the game is in a playable initial state
+            */
+            // for each player config, and for each of their tickets
             for (PlayerConfiguration c : configurations) {
                 
                 numTicketTypes = 0;
@@ -86,24 +89,24 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     if (key == Double || key == Secret) {
                         
                         if (count > 0 && c.colour != Black)
-                            throw new IllegalArgumentException("Players Aren't Allowed Double or Secret Tickets");
+                            throw new IllegalArgumentException("Players aren't allowed double or secret tickets");
                         
                     }
                     else if (key != Bus && key != Taxi && key != Underground)
-                        throw new IllegalArgumentException("Illegal Ticket Type");
+                        throw new IllegalArgumentException("Illegal ticket type");
                     
                     numTicketTypes++;                        
                 }
                 
                 if(numTicketTypes != 5)
-                    throw new IllegalArgumentException("Tickets Are Missing");
+                    throw new IllegalArgumentException("Tickets are missing");
                 
                 if (locations.contains(c.location))
-                        throw new IllegalArgumentException("Duplicate location");
+                        throw new IllegalArgumentException("Duplicate starting location");
                 locations.add(c.location);
                 
                 if (colours.contains(c.colour))
-                        throw new IllegalArgumentException("Duplicate colour");
+                        throw new IllegalArgumentException("Duplicate player colour");
                 colours.add(c.colour);
                 
                 ScotlandYardPlayer player = new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets);
@@ -127,14 +130,14 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
             spectator = requireNonNull(spectator);
             if (spectators.contains(spectator)) spectators.remove(spectator);
-            else throw new IllegalArgumentException("Cant unregister a spectator who wasnt registered");
+            else throw new IllegalArgumentException("Cannot unregister spectator as it is not registered");
 
 	}
 
 	@Override
 	public void startRotate() {
             ScotlandYardPlayer player = playerList.get(currentPlayer);
-            if(isGameOver()) throw new IllegalStateException("Game is Already over");
+            if(isGameOver()) throw new IllegalStateException("Game is already over, cannot start rotation");
             validMoves = validMoves();
             player.player().makeMove(this, player.location(), validMoves, this);
         }
@@ -142,9 +145,10 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
         @Override
         public void accept(Move movein){
             Move move = requireNonNull(movein); 
-            //INFO - doubling allows us to use accept recursively on double moves - it equals true when this occurs.
+            //INFO - "doubling" allows us to use accept recursively on double moves - it equals true when this occurs.
             
-            if(!validMoves.contains(move) && doubling == false) throw new IllegalArgumentException("Invalid Move");
+            // took out "&& !doubling" and still passes tests. If you think this is dangerous put it back in, else delete
+            if(!validMoves.contains(move) /*&& !doubling*/) throw new IllegalArgumentException("Invalid move");
             
             ScotlandYardPlayer player = playerList.get(currentPlayer);
             
@@ -155,122 +159,105 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 TicketMove firstMove = doubleMove.firstMove();
                 TicketMove secondMove = doubleMove.secondMove();
                 
-                //Reveal Location When Necessary        
-                if(!isRevealRound()){
-                firstMove = new TicketMove(Black,firstMove.ticket(),lastKnownMrX);
-                }
+                // Reveal location when necessary        
+                if(!isRevealRound())
+                    firstMove = new TicketMove(Black,firstMove.ticket(),lastKnownMrX);
                 else lastKnownMrX = firstMove.destination();
                     
                 int tmp = round;
                 round++;
-                if(!isRevealRound()){
+                if(!isRevealRound())
                     secondMove = new TicketMove(Black,secondMove.ticket(),lastKnownMrX);
-                }
                 round = tmp;
                 
+                // Create a new doubleMove with hidden locations depending on reveal rounds
                 DoubleMove doubleMove2 = new DoubleMove(Black,firstMove,secondMove);
-                //Notify Spectators about Double Move
+                // Notify spectators with the masked double move
                 for(Spectator spectator : spectators)
-                {
                     spectator.onMoveMade(this, doubleMove2);
-                }
-                //Call accept on the firstMove
+                // Call accept on the firstMove, using "doubling" to avoid calling things twice
                 doubling = true;
                 accept(doubleMove.firstMove());
                 doubling = false;
                 player.removeTicket(Double);
-                //Continue in accept with secondMove
+                // Continue "accept()" with the second move, now that the first has been processed
                 move = doubleMove.secondMove();
             }
             if (move instanceof TicketMove)
             {
                 TicketMove ticketMove = (TicketMove) move;
                 
-                //make the move
+                // make the move
                 player.location(ticketMove.destination());
                 
-                //If its Mr X and time to reveal update his last known position
-                if(currentPlayer == 0 && isRevealRound()) lastKnownMrX = ticketMove.destination();
-                else if(currentPlayer == 0 && !isRevealRound()) move = new TicketMove(Black,ticketMove.ticket(),lastKnownMrX);
+                // If it's MrX and time to reveal update his last known position
+                if (currentPlayer == 0) {
+                    if (isRevealRound()) lastKnownMrX = ticketMove.destination();
+                    else move = new TicketMove(Black,ticketMove.ticket(),lastKnownMrX);
+                }
 
-                //remove tickets
+                // remove used ticket
                 player.removeTicket(ticketMove.ticket());
 
-                //if detective give MrX ticket
+                // if player is a detective then give MrX the used ticket
                 if (currentPlayer != 0) playerList.get(0).addTicket(ticketMove.ticket());
             }
-            
-            // PassMove
-            else if (move instanceof PassMove)
-            {
-                //if (currentPlayer != 0) passMoveCount++; NOT NEEDED?
-            }
 
-            //If MrX
+            // If MrX is the current player then the round is new
             if(currentPlayer == 0) {
-                //Increment round and Notify Spectators.
+                //Increment round and notify spectators.
                 round++;
-                for(Spectator spectator : spectators)
-                {
-                    spectator.onRoundStarted(this, round);
-                }
+                for(Spectator s : spectators)
+                    s.onRoundStarted(this, round);
             }
-            //Notify Spectators about Move Made
-            for(Spectator spectator : spectators)
-            {
-                spectator.onMoveMade(this, move);
-            }
+            // Notify spectators that move has been made
+            for(Spectator s : spectators)
+                s.onMoveMade(this, move);
             
-            //Check if game is over
-            if (!isGameOver()) {
-                if(!doubling){
-                    currentPlayer++;
-                    //If end of round reset and notify spectators
-                    if(currentPlayer == playerList.size())  
-                    {
-                        currentPlayer = 0;
-                        //not needed passMoveCount = 0;
-                        for(Spectator spectator : spectators)
-                            {
-                                spectator.onRotationComplete(this);
-                            }
-                    }
-                    //Otherwise tell the next player to move
-                    else
-                    {
-                        ScotlandYardPlayer playernext = playerList.get(currentPlayer);
-                        // initiate the next move
-                        validMoves = validMoves();
-                        playernext.player().makeMove(this, playernext.location(), validMoves, this);
-                    }
+            // Initiate next move if necessary
+            if (!isGameOver() && !doubling) {
+                currentPlayer++;
+                // If end of round reset and notify spectators
+                if(currentPlayer == playerList.size())  
+                {
+                    currentPlayer = 0;
+                    for(Spectator s : spectators)
+                            s.onRotationComplete(this);
+                }
+                // Otherwise tell the next player to move
+                else
+                {
+                    ScotlandYardPlayer playernext = playerList.get(currentPlayer);
+                    // initiate the next move
+                    validMoves = validMoves();
+                    playernext.player().makeMove(this, playernext.location(), validMoves, this);
                 }
             }
             
         }
      
+        private boolean nextNodeEmpty(Edge<Integer, Transport> edge) {         
+            for(ScotlandYardPlayer player : playerList)
+            {
+                if(player.location()==edge.destination().value() && !player.isMrX())
+                    return false;
+            } 
+            return true;
+        }
+        
         private Set<Move> validMoves(){
             int playerLocation = playerList.get(currentPlayer).location();
             Set<Move> validMoves = new HashSet<>();
             
             if(graph.containsNode(playerLocation))
             {
-                //Find all paths from current location
+                // Find all paths from current location
                 Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
-                //For each path check if the destination is empty then check if they have the tickets needed to follow it
+                // For each path check if the destination is empty and reachable
                 for (Edge<Integer, Transport> edge : edges) {
-                    //is next spot empty
-                    boolean empty = true;
-                    for(ScotlandYardPlayer player : playerList)
-                    {
-                        if(!player.isMrX())
-                        {
-                            if(player.location()==edge.destination().value()){
-                                empty = false;
-                            }
-                        }
-                    } 
 
-                    if (empty) {
+                    if (nextNodeEmpty(edge)) {
+                        // If the player has appropriate tickets to move to the empty node, the move(s) are valid
                         if (playerList.get(currentPlayer).hasTickets(Ticket.fromTransport(edge.data()),1))
                         {
                             TicketMove move = new TicketMove(playerList.get(currentPlayer).colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
@@ -284,8 +271,8 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     }
                 }  
             }
-            //If MrX Consider Double Moves and check for if there are sufficient rounds left to use a double and for if MrX has a double ticket
-            if(currentPlayer==0 && round < rounds.size()-1 && playerList.get(0).hasTickets(Double))
+            // Consider double moves if there are sufficient rounds left if MrX has a double ticket
+            if (round < rounds.size()-1 && playerList.get(currentPlayer).hasTickets(Double))
             {
                 ArrayList<DoubleMove> toAdd = new ArrayList<>();
                 
@@ -294,22 +281,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                     TicketMove firstMove = (TicketMove) m;
                     int destination = firstMove.destination();
                     
+                    // For each move, and for each edge branching from that move's destination, find valid second moves.
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(destination));
                     for (Edge<Integer, Transport> edge : edges) 
                     {
-                        //is next spot empty
-                        boolean empty = true;
-                        for(ScotlandYardPlayer player : playerList)
+                        if (nextNodeEmpty(edge))
                         {
-
-                            //Added exemption of Black's location, as with double he can return to his start.
-                            if(player.location()==edge.destination().value() && player.colour() != Black)
-                                empty = false;
-                        } 
-
-                        if (empty)
-                        {
-                            //checks MrX has both tickets needed
+                            // check MrX has both required tickets
                             int ticketsNeeded = 1;
                             if (firstMove.ticket() == Ticket.fromTransport(edge.data())) ticketsNeeded = 2;
                             
@@ -333,6 +311,7 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
                 validMoves.addAll(toAdd);
             }
             
+            // If there are no valid moves then add a PassMove
             if(validMoves.isEmpty()) {
                 Move Pmove = new PassMove(playerList.get(currentPlayer).colour());
                 validMoves.add(Pmove);
@@ -363,14 +342,13 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 
 	@Override
 	public int getPlayerLocation(Colour colour) {
-            int location = 0;
-            if(colour == Black) location = lastKnownMrX;
-            else{
-                for (ScotlandYardPlayer player : playerList) {
-                    if (player.colour() == colour) location = player.location();
-                }
+            if (colour == Black) return lastKnownMrX;
+            else 
+            {
+                for (ScotlandYardPlayer player : playerList)
+                    if (player.colour() == colour) return player.location();
             }
-            return location;
+            return 0;
         }
 
 	@Override
@@ -386,67 +364,63 @@ public class ScotlandYardModel implements ScotlandYardGame, Consumer<Move> {
 	public boolean isGameOver() {
             boolean isGameOver = false;
             
-            //If last player in round has gone
-            if(currentPlayer == playerList.size()-1){
+            // If last player in round has made their move
+            if (currentPlayer == playerList.size()-1) {
                 
-                //All Rounds are Over
-                if (round > rounds.size()-1 )
+                // MrX wins if all rounds complete
+                if (round > rounds.size()-1)
                     winners.add(Black);
 
                 int tmp = currentPlayer;
-                int counter = 0;
-                for(int i = 0; i<playerList.size(); i++){
-                    currentPlayer = i;
-                    Move Pmove = new PassMove(playerList.get(i).colour());
-                    if(validMoves().contains(Pmove)){
-                        //MrX Has No Moves
-                        if(i==0) winners = detectives;
-                        //One of the detectives cant move
-                        counter++;
+                
+                int stuckDetectives = 0;
+                for (currentPlayer = 0; currentPlayer < playerList.size(); currentPlayer++) {
+                    Move Pmove = new PassMove(playerList.get(currentPlayer).colour());
+
+                    if (validMoves().contains(Pmove)) {
+                        if (currentPlayer == 0) {
+                            winners = detectives;
+                            break;
+                        }
+                        else stuckDetectives++;
                     }
-                    else{
-                        //If a detective can move break loop
-                        if(i!=0) break;
-                    }
+                    else if (currentPlayer != 0) break;
                 }
                 
                 //No detectives can Move
-                if (counter == detectives.size()) winners.add(Black);
+                if (stuckDetectives == detectives.size()) winners.add(Black);
                 currentPlayer = tmp;
-
             }
-            
-            //No Detectives Can Move - not needed
-            //if (passMoveCount == detectives.size())
-             //   winners.add(Black);
-            
-            int counter = 0;
+             
+            int ticketlessDetectives = 0;
             int mrXCurrent = playerList.get(0).location();
-            
-            for (ScotlandYardPlayer player : playerList){
-                
-                boolean notickets = true;
-                for(Ticket t : player.tickets().keySet())
-                {
-                    if(player.tickets().get(t) != 0) notickets =false;
+            // Check if detectives have tickets
+            for (ScotlandYardPlayer player : playerList) {
+                if (player.isDetective()) {
+                    
+                    boolean notickets = true;
+                    for (Ticket t : player.tickets().keySet())
+                        if (player.hasTickets(t)) {
+                            notickets = false;
+                            break;
+                        }
+                    if (notickets) ticketlessDetectives++;
+
+                    // Detective landed on MrX
+                    if (player.location() == mrXCurrent)
+                        winners = detectives;   
                 }
-                if(notickets && !player.isMrX()) counter++;
-                
-                //Detective landed On MrX
-                if(!player.isMrX() && player.location() == mrXCurrent)
-                    winners = detectives;   
             }
             
-            //Players Have No Tickets Left
-            if (counter == detectives.size())
+            // All detectives have no tickets
+            if (ticketlessDetectives == detectives.size())
                 winners.add(Black);
             
-            //If someone has won notify spectators and change variable to return.
+            // If game over, notify spectators and correct return variable
             if (!winners.isEmpty()){
                 isGameOver = true;
-                for(Spectator spectator : spectators){   
+                for(Spectator spectator : spectators)
                     spectator.onGameOver(this, winners);
-                }
             }
             return isGameOver;
 	}
