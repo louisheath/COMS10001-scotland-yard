@@ -25,8 +25,8 @@ import uk.ac.bris.cs.scotlandyard.model.Transport;
 
 
 // TODO name the AI
-@ManagedAI("Heathkinsv4")
-public class Heathkinsv4 implements PlayerFactory {
+@ManagedAI("Heathkinsv5")
+public class Heathkinsv5 implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
@@ -34,7 +34,6 @@ public class Heathkinsv4 implements PlayerFactory {
             return new MyAI();
 	}
 
-	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
             //Allows random numbers to be generated
             private final Random random = new Random();
@@ -55,7 +54,6 @@ public class Heathkinsv4 implements PlayerFactory {
                     best = -9999;
                     //Initialise bestmove to a random move
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                    
                     
                     //Create Set Of Move Nodes
                     Set<MoveNode> nextMovesNodes = new HashSet<>();
