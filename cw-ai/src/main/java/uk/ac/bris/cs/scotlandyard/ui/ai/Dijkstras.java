@@ -2,7 +2,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import uk.ac.bris.cs.gamekit.graph.Edge;
@@ -38,7 +37,7 @@ public class Dijkstras {
                 for(Node<Integer> node :SettledNodes){
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(node);
                     for (Edge<Integer, Transport> edge : edges) {
-                        //Dont count boat edges as detectives can use them
+                        //Dont count boat edges as detectives cant use them
                         if(edge.data()!=Boat){
                             if(!SettledNodes.contains(edge.destination())){
                                 if(distance[edge.destination().value()] > distance[node.value()] + 1) distance[edge.destination().value()] = distance[node.value()] + 1;

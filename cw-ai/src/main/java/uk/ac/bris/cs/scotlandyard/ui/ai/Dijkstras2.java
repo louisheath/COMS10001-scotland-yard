@@ -28,7 +28,7 @@ public class Dijkstras2 {
         
         // prepare distances
         for (Node<Integer> node : unsettledNodes)
-            distance[node.value()] = 99;
+            distance[node.value()] = 9;
         distance[pivot] = 0;
         
         // find new distances of nodes next to pivot
@@ -53,7 +53,7 @@ public class Dijkstras2 {
             unsettledNodes.remove(graph.getNode(pivot));
 
             // find new pivot which is the closest unsettled node
-            int newDist = 99;
+            int newDist = 9;
             int newPiv = -1;
             for (Edge<Integer, Transport> e : edges)
                 if (distance[e.destination().value()] < newDist) {

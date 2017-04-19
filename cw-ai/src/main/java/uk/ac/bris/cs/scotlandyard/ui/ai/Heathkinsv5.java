@@ -1,8 +1,12 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -22,6 +26,9 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.Double;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Bus;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Taxi;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
 
 
 // TODO name the AI
@@ -41,13 +48,23 @@ public class Heathkinsv5 implements PlayerFactory {
             int depth = 3; 
             //Best Score and node at depth
             int best = -9999; 
-            MoveNode bestNode;
+            DataNode bestNode;
             //Save doubleMoves in variable to increase efficiency
-            Set<MoveNode> doubleMoves = new HashSet<>();
+            Set<DataNode> doubleMoves = new HashSet<>();
             //Instanstiate Scorer Object
             Scorer scorer = new Scorer();
+            //Types Of Ticket
+            List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
+
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
+                    List<PlayerData> playerList = new ArrayList<>();
+                    for(Colour c : view.getPlayers()){
+                        Map<Ticket, Integer> tickets = new HashMap<>();
+                        for(Ticket t : ticketTypes) tickets.put(t, view.getPlayerTickets(c, t));
+                        PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
+                        playerList.add(player);
+                    }
                     System.out.println("Start Location Is: "+location);
                     System.out.println("Score of Start Location: " + scorer.scorenode(view, location, 0));
                     //make sure best is reset for new move
@@ -56,7 +73,7 @@ public class Heathkinsv5 implements PlayerFactory {
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     
                     //Create Set Of Move Nodes
-                    Set<MoveNode> nextMovesNodes = new HashSet<>();
+                    Set<DataNode> nextMovesNodes = new HashSet<>();
                     
                     //If in rubbish position and we have double move
                     if(scorer.scorenode(view, location, 0) < 0 && view.getPlayerTickets(Black, Double) > 0){
@@ -66,12 +83,14 @@ public class Heathkinsv5 implements PlayerFactory {
                             bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                         }
                         System.out.println("Double Move It: "+bestmove);
-                        //Add all double moves to our MoveNode Set
+                        //Add all double moves to our DataNode Set
                         for(Move move : moves){
+                            /////////vonfig for data nodes////////////////////////////List<PlayerData> newPD = move.playerList(); newPD.get(0).location(edge.destination().value());
                             if (move instanceof DoubleMove){
                                 DoubleMove Dmove = (DoubleMove) move;
                                 if(scorer.scorenode(view,Dmove.finalDestination(),0)>0){
-                                    MoveNode node = new MoveNode(move);
+                                    
+                                    DataNode node = new DataNode(playerList, move);
                                     nextMovesNodes.add(node);
                                 }
                             }
@@ -84,12 +103,12 @@ public class Heathkinsv5 implements PlayerFactory {
                         {
                             bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                         }
-                        //Add all Ticket moves to our MoveNode Set
+                        //Add all Ticket moves to our DataNode Set
                         for(Move move : moves){
                             if (move instanceof TicketMove){
                                 TicketMove tmove = (TicketMove) move;
                                 if(scorer.scorenode(view,tmove.destination(),0)>0){
-                                    MoveNode node = new MoveNode(move);
+                                    DataNode node = new DataNode(playerList,move);
                                     nextMovesNodes.add(node);
                                 }
                             }
@@ -97,7 +116,8 @@ public class Heathkinsv5 implements PlayerFactory {
                     }
                     System.out.println("Random Move is: "+bestmove);
                     
-                    bestNode = new MoveNode(bestmove);    
+                    //Iniatilise Best Move
+                    bestNode = new DataNode(playerList,bestmove);    
                     
                     
                     //Node Stuff - explore tree to depth - sets best node correctly
@@ -132,11 +152,11 @@ public class Heathkinsv5 implements PlayerFactory {
 
 		}              
                 
-            private Set<MoveNode> nextMovesNodes(Set<MoveNode> moves, ScotlandYardView view, int future) {
+            private Set<DataNode> nextMovesNodes(Set<DataNode> moves, ScotlandYardView view, int future) {
                 Graph<Integer, Transport> graph = view.getGraph();
-                Set<MoveNode> nextMovesNodes = new HashSet<>();
+                Set<DataNode> nextMovesNodes = new HashSet<>();
                 //For all moves in set
-                for(MoveNode move : moves){
+                for(DataNode move : moves){
                     //Find where move ends up
                     int playerLocation = 0;
                     if (move.move() instanceof TicketMove){
@@ -164,10 +184,15 @@ public class Heathkinsv5 implements PlayerFactory {
                                 int score = scorer.scorenode(view,edge.destination().value(),future);
                                 
                                 if(score > 0){
+                                    //GetPlayerData
+                                    List<PlayerData> newPD = move.playerList();
+                                    newPD.get(0).location(edge.destination().value());
                                     if (view.getPlayerTickets(Black, Ticket.fromTransport(edge.data())) >= 1){
                                         TicketMove tmove = new TicketMove(Black,Ticket.fromTransport(edge.data()),edge.destination().value());
                                         //Set up node and make them point correctly
-                                        MoveNode node = new MoveNode(tmove);
+                                        //Adjust PlayerData to reflect game after this move
+                                        newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
+                                        DataNode node = new DataNode(newPD,tmove);
                                         node.setprevious(move);
                                         move.setnext(node);
                                         nextMovesNodes.add(node);
@@ -178,8 +203,9 @@ public class Heathkinsv5 implements PlayerFactory {
                                     }
                                     if (view.getPlayerTickets(Black,Secret) >= 1){
                                         TicketMove tmove = new TicketMove(Black,Secret,edge.destination().value());
+                                        newPD.get(0).adjustTicketCount(Secret, -1);
                                         //Set up node and make them point correctly
-                                        MoveNode node = new MoveNode(tmove);
+                                        DataNode node = new DataNode(newPD,tmove);
                                         node.setprevious(move);
                                         move.setnext(node);
                                         nextMovesNodes.add(node);

@@ -18,7 +18,7 @@ import uk.ac.bris.cs.scotlandyard.model.Transport;
  */
 public class Scorer {
     //Create a dikstras so we can call it later
-    static Dijkstras dijkstras = new Dijkstras();
+    static Dijkstras2 dijkstras = new Dijkstras2();
     public int scorenode(ScotlandYardView view, int location, int depth){
             //Create Variables to store scores in
             int score;
