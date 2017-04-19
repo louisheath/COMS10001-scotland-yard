@@ -55,7 +55,7 @@ public class Heathkinsv4 implements PlayerFactory {
                     best = -9999;
                     //Initialise bestmove to a random move
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                    System.out.println("Random Move is: "+bestmove);
+                    
                     
                     //Create Set Of Move Nodes
                     Set<MoveNode> nextMovesNodes = new HashSet<>();
@@ -97,6 +97,7 @@ public class Heathkinsv4 implements PlayerFactory {
                             }
                         }
                     }
+                    System.out.println("Random Move is: "+bestmove);
                     
                     bestNode = new MoveNode(bestmove);    
                     
