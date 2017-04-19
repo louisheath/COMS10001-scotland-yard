@@ -16,23 +16,14 @@ import static uk.ac.bris.cs.scotlandyard.model.Transport.Boat;
 /**
  * Dijkstra's algorithm
  */
-public class Dijkstras2 {
-    
-    List <Node<Integer>> unsettledNodes = new ArrayList<>();
-    List <Node<Integer>> settledNodes = new ArrayList<>();
-    Graph<Integer, Transport> graph = new Graph<>();
-    
-    private void settle(int location) {
-        settledNodes.add(graph.getNode(location));
-        unsettledNodes.remove(graph.getNode(location));
-    }
+public class Dijkstras2 {  
 
     public int[] calculate(int pivot, Graph<Integer, Transport> graph){
         
-        // initiate attributes
-        this.graph = graph;
+        // initiate structures
+        List <Node<Integer>> unsettledNodes = new ArrayList<>();
         unsettledNodes.addAll(graph.getNodes());
-        
+        List <Node<Integer>> settledNodes = new ArrayList<>();
         int[] distance = new int[unsettledNodes.size()+1];
         
         // prepare distances
@@ -57,8 +48,9 @@ public class Dijkstras2 {
                 if (distance[e.destination().value()] > distance[graph.getNode(pivot).value()] + 1 && e.data() != Boat) 
                     distance[e.destination().value()] = distance[graph.getNode(pivot).value()] + 1;
 
-            // the pivot node is now settled
-            settle(pivot);
+            // the pivot node can now be settled
+            settledNodes.add(graph.getNode(pivot));
+            unsettledNodes.remove(graph.getNode(pivot));
 
             // find new pivot which is the closest unsettled node
             int newDist = 99;
