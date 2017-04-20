@@ -45,8 +45,8 @@ public class Heathkinsv6 implements PlayerFactory {
 	private static class MyAI implements Player {
             //Allows random numbers to be generated
             private final Random random = new Random();
-            //How many moves ahead to look
-            int depth = 1; 
+            //How many moves ahead to look(1 is just as what the opponents do)
+            int depth = 2; 
             //Best Score and node at depth
             int best = -9999; 
             DataNode bestNode;
@@ -113,8 +113,8 @@ public class Heathkinsv6 implements PlayerFactory {
                     }
                                      
                     //find first move to get to endnode
-                    for(int i = 0; i<depth*playerList.size() ;i++){
-                        //if(i%playerList.size()==0)
+                    for(int i = 0; i<depth*playerList.size()-1 ;i++){
+                        if((i+1)%playerList.size()==0) System.out.println("Black?");
                         System.out.println("Move  "+ bestNode.move());
                          /*
                             NOT SURE ON THIS YET
@@ -162,17 +162,14 @@ public class Heathkinsv6 implements PlayerFactory {
                 //Create Set Of Move Nodes
                 Set<DataNode> nextMovesNodes = new HashSet<>();
                 for(DataNode move : moves){
-                    System.out.println("size"+nextMovesNodes.size());
-                    System.out.println("new Move"+move.move());
                     Set<DataNode> nextPlayerNodes = new HashSet<>();
                     nextPlayerNodes.add(move);
                     int i = 0;
                     for(PlayerData player : move.playerList()){
-                        if(player.colour()==Black && future == 0){ System.out.println("continue");continue; }
-                        System.out.println("new player");
-
                             //Tmp storage set
                             Set<DataNode> tmp = new HashSet<>();
+                            //ignores black on first depth as black moves passed in so detectives go next
+                            if(player.colour()==Black && future == 0){  i++; continue; }
                             //Find where out where they are
                             int playerLocation = player.location();
                             if(graph.containsNode(playerLocation)){
@@ -212,7 +209,7 @@ public class Heathkinsv6 implements PlayerFactory {
                                                        //If last player at last depth - (final nodes - e.g leaves)
                                                        if(this.depth==future+1) {
                                                            score = scorer.scorenode(graph,newPD);
-                                                           if(score > this.best){ System.out.println("new best"); this.best = score; this.bestNode = node; }
+                                                           if(score > this.best){  this.best = score; this.bestNode = node; }
                                                        }
                                                    }
                                                 }
