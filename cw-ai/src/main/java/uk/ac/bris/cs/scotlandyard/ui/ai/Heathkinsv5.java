@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
@@ -68,6 +69,8 @@ public class Heathkinsv5 implements PlayerFactory {
                         PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
                         playerList.add(player);
                     }
+                    //Makes Black Location Correct
+                    playerList.get(0).location(location);
                     System.out.println("Start Location Is: "+location);
                     System.out.println("Score of Start Location: " + scorer.scorenode(graph, playerList));
                     //make sure best is reset for new move
@@ -84,7 +87,10 @@ public class Heathkinsv5 implements PlayerFactory {
                     //Add all Ticket moves to our DataNode Set
                     for(Move move : moves){
                         if (move instanceof TicketMove){
-                            List<PlayerData> newPD = playerList;
+                           
+                            List<PlayerData> newPD = new ArrayList<>();
+                            //Stops it altering original list objects
+                            for(PlayerData p : playerList) newPD.add(p.clone());
                             TicketMove tmove = (TicketMove) move;
                             newPD.get(0).location(tmove.destination());
                             newPD.get(0).adjustTicketCount(tmove.ticket(), -1);
@@ -110,8 +116,8 @@ public class Heathkinsv5 implements PlayerFactory {
                     for(int i = 0; i<depth ;i++){
                         System.out.println("Move  "+ bestNode.move());
                         if(i == depth-1){
-                            System.out.println("Bingo");
-                            //if first move isnt great or a double move would help
+                            
+                            /*//if first move isnt great or a double move would help
                             int d = scorer.scorenode(graph,bestNode.playerList());
                             int s = scorer.scorenode(graph,bestNode.previous().playerList());
                             if(s < 50 || 1.5*s < d){
@@ -121,7 +127,7 @@ public class Heathkinsv5 implements PlayerFactory {
                                DataNode node = new DataNode(bestNode.playerList(),doubleMove);
                                node.setprevious(bestNode.previous());
                                bestNode.setprevious(node);
-                            }
+                            }*/
                         }
                         bestNode = bestNode.previous();
                     }
@@ -161,42 +167,56 @@ public class Heathkinsv5 implements PlayerFactory {
                             boolean empty = true;
                             for(PlayerData player : move.playerList()){
                                 //Added exemption of Black's location, as with double he can return to his start.
-                                if(player.location() == edge.destination().value() && player.colour() != Black) empty = false;
+                                if(player.location() == edge.destination().value() && player.colour() != Black) empty=false;
                             } 
-                            if (empty) {
-                                int score = scorer.scorenode(graph,move.playerList());
-                                if(score > 0){
-                                    //GetPlayerData
-                                    List<PlayerData> newPD = move.playerList();
-                                    newPD.get(0).location(edge.destination().value());
+                            if (empty) {     
                                     if (move.playerList().get(0).hasTickets(fromTransport(edge.data()), 1)){
+                                        //GetPlayerData
+                                        List<PlayerData> newPD = new ArrayList<>();
+                                        //Stops it altering original list objects
+                                        for(PlayerData p : move.playerList()) newPD.add(p.clone());
+                                        newPD.get(0).location(edge.destination().value());
                                         TicketMove tmove = new TicketMove(Black,Ticket.fromTransport(edge.data()),edge.destination().value());
                                         //Set up node and make them point correctly
                                         //Adjust PlayerData to reflect game after this move
                                         newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
-                                        DataNode node = new DataNode(newPD,tmove);
-                                        node.setprevious(move);
-                                        move.setnext(node);
-                                        nextMovesNodes.add(node);
-                                        //Are we at final depth - if so is it better than a previous soln - if yes store it
-                                        if(this.depth==future+1) {
-                                            if(score > this.best){ this.best = score; this.bestNode = node; }
+                                        int score = scorer.scorenode(graph,newPD);
+                                        if(score>0){
+                                            
+                                            //Set up node and make them point correctly
+                                            DataNode node = new DataNode(newPD,tmove);
+                                            node.setprevious(move);
+                                            move.setnext(node);
+                                            nextMovesNodes.add(node);
+
+                                            //Are we at final depth - if so is it better than a previous soln - if yes store it
+                                            if(this.depth==future+1) {
+                                                if(score > this.best){ this.best = score; this.bestNode = node; }
+                                            }
                                         }
                                     }
                                     if (move.playerList().get(0).hasTickets(Secret, 1)){
+                                        //GetPlayerData
+                                        List<PlayerData> newPD = new ArrayList<>();
+                                        //Stops it altering original list objects
+                                        for(PlayerData p : move.playerList()) newPD.add(p.clone());
+                                        newPD.get(0).location(edge.destination().value());
                                         TicketMove tmove = new TicketMove(Black,Secret,edge.destination().value());
                                         newPD.get(0).adjustTicketCount(Secret, -1);
-                                        //Set up node and make them point correctly
-                                        DataNode node = new DataNode(newPD,tmove);
-                                        node.setprevious(move);
-                                        move.setnext(node);
-                                        nextMovesNodes.add(node);
-                                        //Are we at final depth - if so is it better than a previous soln - if yes store it
-                                        if(this.depth==future+1) {
-                                            if(score > this.best){ this.best = score; this.bestNode = node; }
+                                        int score = scorer.scorenode(graph,newPD);
+                                        if(score>0){
+                                            //Set up node and make them point correctly
+                                            DataNode node = new DataNode(newPD,tmove);
+                                            node.setprevious(move);
+                                            move.setnext(node);
+                                            nextMovesNodes.add(node);
+
+                                            //Are we at final depth - if so is it better than a previous soln - if yes store it
+                                            if(this.depth==future+1) {
+                                                if(score > this.best){ this.best = score; this.bestNode = node; }
+                                            }
                                         }
                                     }
-                                }
                             }   
                         }  
                     }
