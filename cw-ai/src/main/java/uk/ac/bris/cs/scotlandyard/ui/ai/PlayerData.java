@@ -21,9 +21,8 @@ public class PlayerData {
         private final Map<Ticket, Integer> tickets;
 
 	/**
-	 * Constructs a new ScotlandYardPlayer object.
+	 * Constructs a new PlayerData object.
 	 *
-	 * @param player the Player object associated with the player.
 	 * @param colour the colour of the player.
 	 * @param location the location of the player.
 	 * @param tickets the tickets associated with the player.

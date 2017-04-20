@@ -29,6 +29,7 @@ import uk.ac.bris.cs.scotlandyard.model.Transport;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Bus;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Taxi;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
 // TODO name the AI
@@ -52,12 +53,14 @@ public class Heathkinsv5 implements PlayerFactory {
             //Save doubleMoves in variable to increase efficiency
             Set<DataNode> doubleMoves = new HashSet<>();
             //Instanstiate Scorer Object
-            Scorer scorer = new Scorer();
+            Scorer2 scorer = new Scorer2();
             //Types Of Ticket
             List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
 
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
+                    Graph<Integer, Transport> graph = view.getGraph();
+                    //Build PlayerList
                     List<PlayerData> playerList = new ArrayList<>();
                     for(Colour c : view.getPlayers()){
                         Map<Ticket, Integer> tickets = new HashMap<>();
@@ -66,7 +69,7 @@ public class Heathkinsv5 implements PlayerFactory {
                         playerList.add(player);
                     }
                     System.out.println("Start Location Is: "+location);
-                    System.out.println("Score of Start Location: " + scorer.scorenode(view, location, 0));
+                    System.out.println("Score of Start Location: " + scorer.scorenode(graph, playerList));
                     //make sure best is reset for new move
                     best = -9999;
                     //Initialise bestmove to a random move
@@ -75,43 +78,18 @@ public class Heathkinsv5 implements PlayerFactory {
                     //Create Set Of Move Nodes
                     Set<DataNode> nextMovesNodes = new HashSet<>();
                     
-                    //If in rubbish position and we have double move
-                    if(scorer.scorenode(view, location, 0) < 0 && view.getPlayerTickets(Black, Double) > 0){
-                        //use Double Move
-                        while(bestmove instanceof TicketMove)
-                        {
-                            bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                        }
-                        System.out.println("Double Move It: "+bestmove);
-                        //Add all double moves to our DataNode Set
-                        for(Move move : moves){
-                            /////////vonfig for data nodes////////////////////////////List<PlayerData> newPD = move.playerList(); newPD.get(0).location(edge.destination().value());
-                            if (move instanceof DoubleMove){
-                                DoubleMove Dmove = (DoubleMove) move;
-                                if(scorer.scorenode(view,Dmove.finalDestination(),0)>0){
-                                    
-                                    DataNode node = new DataNode(playerList, move);
-                                    nextMovesNodes.add(node);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        //use Ticket Move
-                        while(bestmove instanceof DoubleMove)
-                        {
-                            bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                        }
-                        //Add all Ticket moves to our DataNode Set
-                        for(Move move : moves){
-                            if (move instanceof TicketMove){
-                                TicketMove tmove = (TicketMove) move;
-                                if(scorer.scorenode(view,tmove.destination(),0)>0){
-                                    DataNode node = new DataNode(playerList,move);
-                                    nextMovesNodes.add(node);
-                                }
-                            }
+                    //use Ticket Move
+                    while(bestmove instanceof DoubleMove) bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                    
+                    //Add all Ticket moves to our DataNode Set
+                    for(Move move : moves){
+                        if (move instanceof TicketMove){
+                            List<PlayerData> newPD = playerList;
+                            TicketMove tmove = (TicketMove) move;
+                            newPD.get(0).location(tmove.destination());
+                            newPD.get(0).adjustTicketCount(tmove.ticket(), -1);
+                            DataNode node = new DataNode(newPD, move);
+                            nextMovesNodes.add(node);
                         }
                     }
                     System.out.println("Random Move is: "+bestmove);
@@ -122,24 +100,40 @@ public class Heathkinsv5 implements PlayerFactory {
                     
                     //Node Stuff - explore tree to depth - sets best node correctly
                     for(int i = 0; i < depth; i++){
-                        nextMovesNodes = nextMovesNodes(nextMovesNodes,view,i);
+                        //Do MrX Next Move
+                        nextMovesNodes = nextMrXNodes(nextMovesNodes,graph,i);
+                        //Do Detective Moves
                     }
                                      
                     //find first move to get to endnode
+                    //DEPTH WILL BE WRONG WHEN FULL TREE
                     for(int i = 0; i<depth ;i++){
                         System.out.println("Move  "+ bestNode.move());
+                        if(i == depth-1){
+                            System.out.println("Bingo");
+                            //if first move isnt great or a double move would help
+                            int d = scorer.scorenode(graph,bestNode.playerList());
+                            int s = scorer.scorenode(graph,bestNode.previous().playerList());
+                            if(s < 50 || 1.5*s < d){
+                                System.out.println("Double");
+                               //use double move
+                               DoubleMove doubleMove = new DoubleMove(Black,(TicketMove)bestNode.previous().move(),(TicketMove)bestNode.move());
+                               DataNode node = new DataNode(bestNode.playerList(),doubleMove);
+                               node.setprevious(bestNode.previous());
+                               bestNode.setprevious(node);
+                            }
+                        }
                         bestNode = bestNode.previous();
                     }
                     bestmove = bestNode.move();
                     
                     int thismove = 0;                    
                     if (bestmove instanceof TicketMove){
-                        thismove = scorer.scorenode(view,((TicketMove) bestmove).destination(),0);
+                        thismove = scorer.scorenode(graph,bestNode.playerList());
                     }
-                    //tbh dont think its needed but cba to remove as wont be activated anyway
                     else if (bestmove instanceof DoubleMove){
-                        thismove = scorer.scorenode(view,((DoubleMove) bestmove).finalDestination(),0);
-                    }
+                        thismove = scorer.scorenode(graph,bestNode.playerList());
+                    }                   
                     
                     System.out.println(depth + " Move Best Score:"+best);
                     System.out.println("This Move  "+ bestmove);
@@ -152,21 +146,12 @@ public class Heathkinsv5 implements PlayerFactory {
 
 		}              
                 
-            private Set<DataNode> nextMovesNodes(Set<DataNode> moves, ScotlandYardView view, int future) {
-                Graph<Integer, Transport> graph = view.getGraph();
+            private Set<DataNode> nextMrXNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
                 Set<DataNode> nextMovesNodes = new HashSet<>();
                 //For all moves in set
                 for(DataNode move : moves){
                     //Find where move ends up
-                    int playerLocation = 0;
-                    if (move.move() instanceof TicketMove){
-                        TicketMove tmove = (TicketMove) move.move();
-                        playerLocation = tmove.destination();
-                    }
-                    if (move.move() instanceof DoubleMove){
-                        DoubleMove Dmove = (DoubleMove) move.move();
-                        playerLocation = Dmove.finalDestination();                   
-                    }
+                    int playerLocation = move.playerList().get(0).location();
                     if(graph.containsNode(playerLocation)){
                         //Find all paths from current location
                         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
@@ -174,20 +159,17 @@ public class Heathkinsv5 implements PlayerFactory {
                         for(Edge<Integer, Transport> edge : edges) {
                             //is next spot empty
                             boolean empty = true;
-                            for(Colour player : view.getPlayers()){
+                            for(PlayerData player : move.playerList()){
                                 //Added exemption of Black's location, as with double he can return to his start.
-                                if(view.getPlayerLocation(player)==edge.destination().value() && player != Black)
-                                empty = false;
+                                if(player.location() == edge.destination().value() && player.colour() != Black) empty = false;
                             } 
-
                             if (empty) {
-                                int score = scorer.scorenode(view,edge.destination().value(),future);
-                                
+                                int score = scorer.scorenode(graph,move.playerList());
                                 if(score > 0){
                                     //GetPlayerData
                                     List<PlayerData> newPD = move.playerList();
                                     newPD.get(0).location(edge.destination().value());
-                                    if (view.getPlayerTickets(Black, Ticket.fromTransport(edge.data())) >= 1){
+                                    if (move.playerList().get(0).hasTickets(fromTransport(edge.data()), 1)){
                                         TicketMove tmove = new TicketMove(Black,Ticket.fromTransport(edge.data()),edge.destination().value());
                                         //Set up node and make them point correctly
                                         //Adjust PlayerData to reflect game after this move
@@ -201,7 +183,7 @@ public class Heathkinsv5 implements PlayerFactory {
                                             if(score > this.best){ this.best = score; this.bestNode = node; }
                                         }
                                     }
-                                    if (view.getPlayerTickets(Black,Secret) >= 1){
+                                    if (move.playerList().get(0).hasTickets(Secret, 1)){
                                         TicketMove tmove = new TicketMove(Black,Secret,edge.destination().value());
                                         newPD.get(0).adjustTicketCount(Secret, -1);
                                         //Set up node and make them point correctly
