@@ -107,7 +107,9 @@ public class Heathkinsv6 implements PlayerFactory {
                         //Do MrX Next Move
                         //probs dont need nextMovesNodes = nextMrXNodes(nextMovesNodes,graph,i);
                         //Do Detective Moves
+                        System.out.println(nextMovesNodes.size());
                         nextMovesNodes = nextDetectiveNodes(nextMovesNodes,graph,i);
+                        System.out.println(nextMovesNodes.size());
                     }
                                      
                     //find first move to get to endnode
@@ -160,11 +162,13 @@ public class Heathkinsv6 implements PlayerFactory {
                 //Create Set Of Move Nodes
                 Set<DataNode> nextMovesNodes = new HashSet<>();
                 for(DataNode move : moves){
+                    System.out.println("size"+nextMovesNodes.size());
                     System.out.println("new Move"+move.move());
                     Set<DataNode> nextPlayerNodes = new HashSet<>();
                     nextPlayerNodes.add(move);
                     int i = 0;
                     for(PlayerData player : move.playerList()){
+                        if(player.colour()==Black && future == 0){ System.out.println("continue");continue; }
                         System.out.println("new player");
 
                             //Tmp storage set
