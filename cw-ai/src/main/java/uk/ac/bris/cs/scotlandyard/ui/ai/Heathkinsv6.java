@@ -33,8 +33,8 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
 // TODO name the AI
-@ManagedAI("Heathkinsv5")
-public class Heathkinsv5 implements PlayerFactory {
+@ManagedAI("Heathkinsv6")
+public class Heathkinsv6 implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
@@ -46,7 +46,7 @@ public class Heathkinsv5 implements PlayerFactory {
             //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look
-            int depth = 3; 
+            int depth = 1; 
             //Best Score and node at depth
             int best = -9999; 
             DataNode bestNode;
@@ -85,8 +85,7 @@ public class Heathkinsv5 implements PlayerFactory {
                     
                     //Add all Ticket moves to our DataNode Set
                     for(Move move : moves){
-                        if (move instanceof TicketMove){
-                           
+                        if (move instanceof TicketMove){               
                             List<PlayerData> newPD = new ArrayList<>();
                             //Stops it altering original list objects
                             for(PlayerData p : playerList) newPD.add(p.clone());
@@ -102,25 +101,28 @@ public class Heathkinsv5 implements PlayerFactory {
                     //Iniatilise Best Move
                     bestNode = new DataNode(playerList,bestmove);    
                     
-                    
                     //Node Stuff - explore tree to depth - sets best node correctly
                     for(int i = 0; i < depth; i++){
+                        System.out.println("Depth Iteration");
                         //Do MrX Next Move
-                        nextMovesNodes = nextMrXNodes(nextMovesNodes,graph,i);
+                        //probs dont need nextMovesNodes = nextMrXNodes(nextMovesNodes,graph,i);
                         //Do Detective Moves
+                        nextMovesNodes = nextDetectiveNodes(nextMovesNodes,graph,i);
                     }
                                      
                     //find first move to get to endnode
-                    //DEPTH WILL BE WRONG WHEN FULL TREE
-                    for(int i = 0; i<depth ;i++){
+                    for(int i = 0; i<depth*playerList.size() ;i++){
+                        //if(i%playerList.size()==0)
                         System.out.println("Move  "+ bestNode.move());
-                        if(i == depth-1){
+                         /*
+                            NOT SURE ON THIS YET
+                            if(i == depth-1){
                             //Can we use a double move
                             if(view.getPlayerTickets(Black, Double) > 0){
                                 //if first move isnt great or a double move would help
                                 int d = scorer.scorenode(graph,bestNode.playerList());
                                 int s = scorer.scorenode(graph,bestNode.previous().playerList());
-                                if(s < 50 || 1.7*s < d){
+                                if(s < 50 || 1.8*s < d){
                                     System.out.println("Double");
                                    //use double move
                                    DoubleMove doubleMove = new DoubleMove(Black,(TicketMove)bestNode.previous().move(),(TicketMove)bestNode.move());
@@ -130,6 +132,7 @@ public class Heathkinsv5 implements PlayerFactory {
                                 }
                             }
                         }
+*/
                         bestNode = bestNode.previous();
                     }
                     bestmove = bestNode.move();
@@ -151,78 +154,98 @@ public class Heathkinsv5 implements PlayerFactory {
 		    // picks best move
 		    callback.accept(bestmove);
 
-		}              
-                
-            private Set<DataNode> nextMrXNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
+		}                        
+
+        private Set<DataNode> nextDetectiveNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
+                //Create Set Of Move Nodes
                 Set<DataNode> nextMovesNodes = new HashSet<>();
-                //For all moves in set
                 for(DataNode move : moves){
-                    //Find where move ends up
-                    int playerLocation = move.playerList().get(0).location();
-                    if(graph.containsNode(playerLocation)){
-                        //Find all paths from current location
-                        Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
-                        //For each path check if the destination is empty then check if they have the tickets needed to follow it
-                        for(Edge<Integer, Transport> edge : edges) {
-                            //is next spot empty
-                            boolean empty = true;
-                            for(PlayerData player : move.playerList()){
-                                //Added exemption of Black's location, as with double he can return to his start.
-                                if(player.location() == edge.destination().value() && player.colour() != Black) empty=false;
-                            } 
-                            if (empty) {     
-                                    if (move.playerList().get(0).hasTickets(fromTransport(edge.data()), 1)){
-                                        //GetPlayerData
-                                        List<PlayerData> newPD = new ArrayList<>();
-                                        //Stops it altering original list objects
-                                        for(PlayerData p : move.playerList()) newPD.add(p.clone());
-                                        newPD.get(0).location(edge.destination().value());
-                                        TicketMove tmove = new TicketMove(Black,Ticket.fromTransport(edge.data()),edge.destination().value());
-                                        //Set up node and make them point correctly
-                                        //Adjust PlayerData to reflect game after this move
-                                        newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
-                                        int score = scorer.scorenode(graph,newPD);
-                                        if(score>0){
-                                            
-                                            //Set up node and make them point correctly
-                                            DataNode node = new DataNode(newPD,tmove);
-                                            node.setprevious(move);
-                                            move.setnext(node);
-                                            nextMovesNodes.add(node);
+                    System.out.println("new Move"+move.move());
+                    Set<DataNode> nextPlayerNodes = new HashSet<>();
+                    nextPlayerNodes.add(move);
+                    int i = 0;
+                    for(PlayerData player : move.playerList()){
+                        System.out.println("new player");
 
-                                            //Are we at final depth - if so is it better than a previous soln - if yes store it
-                                            if(this.depth==future+1) {
-                                                if(score > this.best){ this.best = score; this.bestNode = node; }
+                            //Tmp storage set
+                            Set<DataNode> tmp = new HashSet<>();
+                            //Find where out where they are
+                            int playerLocation = player.location();
+                            if(graph.containsNode(playerLocation)){
+                                //Find all paths from current location
+                                Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
+                                //For each path check if the destination is empty then check if they have the tickets needed to follow it
+                                for(Edge<Integer, Transport> edge : edges) {
+                                    //is next spot empty
+                                    boolean empty = true;
+                                    for(PlayerData player2 : move.playerList()){
+                                        if(player2.location() == edge.destination().value()) empty=false;
+                                    } 
+                                    if (empty) {     
+                                        if (player.hasTickets(fromTransport(edge.data()), 1)){
+                                            //GetPlayerData
+                                            List<PlayerData> newPD = new ArrayList<>();
+                                            //Stops it altering original list objects
+                                            for(PlayerData p : move.playerList()) newPD.add(p.clone());
+                                            TicketMove tmove = new TicketMove(player.colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
+                                            //Adjust PlayerData to reflect game after this move
+                                            newPD.get(i).location(edge.destination().value());
+                                            newPD.get(i).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
+                                            int score = 1;
+                                            if(player.colour() == Black) score = scorer.scorenode(graph,newPD);
+                                            //Dont allow black moves which put it in danger
+                                            if(score > 0){ 
+                                                for(DataNode previousnode : nextPlayerNodes){
+                                                    //Set up node and make them point correctly
+                                                    DataNode node = new DataNode(newPD,tmove);
+                                                    node.setprevious(previousnode);
+                                                    previousnode.setnext(node);
+                                                    tmp.add(node);
+                                                
+                                                   //If last player
+                                                   if(i == move.playerList().size()-1){
+                                                       nextMovesNodes.add(node);
+                                                       //If last player at last depth - (final nodes - e.g leaves)
+                                                       if(this.depth==future+1) {
+                                                           score = scorer.scorenode(graph,newPD);
+                                                           if(score > this.best){ System.out.println("new best"); this.best = score; this.bestNode = node; }
+                                                       }
+                                                   }
+                                                }
                                             }
                                         }
-                                    }
-                                    if (move.playerList().get(0).hasTickets(Secret, 1)){
-                                        //GetPlayerData
-                                        List<PlayerData> newPD = new ArrayList<>();
-                                        //Stops it altering original list objects
-                                        for(PlayerData p : move.playerList()) newPD.add(p.clone());
-                                        newPD.get(0).location(edge.destination().value());
-                                        TicketMove tmove = new TicketMove(Black,Secret,edge.destination().value());
-                                        newPD.get(0).adjustTicketCount(Secret, -1);
-                                        int score = scorer.scorenode(graph,newPD);
-                                        if(score>0){
-                                            //Set up node and make them point correctly
-                                            DataNode node = new DataNode(newPD,tmove);
-                                            node.setprevious(move);
-                                            move.setnext(node);
-                                            nextMovesNodes.add(node);
-
-                                            //Are we at final depth - if so is it better than a previous soln - if yes store it
-                                            if(this.depth==future+1) {
-                                                if(score > this.best){ this.best = score; this.bestNode = node; }
-                                            }
+                                        if (player.hasTickets(Secret, 1)){
+                                            //GetPlayerData
+                                            List<PlayerData> newPD = new ArrayList<>();
+                                            //Stops it altering original list objects
+                                            for(PlayerData p : move.playerList()) newPD.add(p.clone());
+                                            TicketMove tmove = new TicketMove(player.colour(),Secret,edge.destination().value());
+                                            //Adjust PlayerData to reflect game after this move
+                                            newPD.get(i).location(edge.destination().value());
+                                            newPD.get(i).adjustTicketCount(Secret, -1);                      
+                                            int score = 1;
+                                            if(player.colour() == Black) score = scorer.scorenode(graph,newPD);
+                                            //Dont allow black moves which put it in danger
+                                            if(score > 0){
+                                                for(DataNode previousnode : nextPlayerNodes){
+                                                    //Set up node and make them point correctly
+                                                    DataNode node = new DataNode(newPD,tmove);
+                                                    node.setprevious(previousnode);
+                                                    previousnode.setnext(node);
+                                                    tmp.add(node);     
+                                                }
+                                            }                                        
                                         }
+                                        
                                     }
-                            }   
-                        }  
-                    }
+                                }    
+                        }
+                        nextPlayerNodes.clear();
+                        nextPlayerNodes.addAll(tmp);
+                        i++;
+                    }    
                 }
-                return nextMovesNodes;
-            }             
+            return nextMovesNodes;
+        }             
     }
 }
