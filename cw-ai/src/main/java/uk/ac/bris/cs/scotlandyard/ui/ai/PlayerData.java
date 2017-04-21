@@ -11,8 +11,7 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYardPlayer;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
 
 /**
- * DataNode is an object to be used in the game tree. It stores a playerconfigs
- * and links to the ones before and after it.
+ * A class that contains all the information about a particular player.
  */
 public class PlayerData {
     

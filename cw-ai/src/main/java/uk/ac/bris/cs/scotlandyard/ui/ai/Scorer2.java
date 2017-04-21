@@ -40,10 +40,10 @@ public class Scorer2 {
                         hasEscape = true;
                         //Score the path based on desirabilty - Boat is most as it allows large movements and Detectives can't follow
                         switch(edge.data()){
-                            case Taxi: edgescore = edgescore + 1; break;
-                            case Bus: edgescore = edgescore + 6; break;
-                            case Underground: edgescore = edgescore + 10; break;
-                            case Boat: edgescore = edgescore + 40; break;
+                            case Taxi: edgescore += 1; break;
+                            case Bus: edgescore += 6; break;
+                            case Underground: edgescore += 10; break;
+                            case Boat: edgescore += 40; break;
                         }
                     }
                 }
