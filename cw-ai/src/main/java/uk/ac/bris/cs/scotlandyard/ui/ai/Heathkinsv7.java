@@ -165,6 +165,7 @@ public class Heathkinsv7 implements PlayerFactory {
                     alpha = max(alpha, v);
                     if (beta <= alpha) break;
                 }
+                node.score(v);
                 return v;
             }
             //Get Min - Detective
@@ -175,6 +176,7 @@ public class Heathkinsv7 implements PlayerFactory {
                     beta = min(beta, v);
                     if (beta <= alpha) break;   
                 }
+                node.score(v);
                 return v;
             }
         }

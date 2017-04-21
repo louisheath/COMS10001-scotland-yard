@@ -131,7 +131,8 @@ public class Heathkinsv6 implements PlayerFactory {
                     }
                                                                                           
                     //MiniMax Game Tree
-                    miniMax(nextMovesNodes);                   
+                    miniMax(nextMovesNodes);
+                    System.out.println("MiniMax Best: "+startNode.score());
                                
                     for(DataNodeLegacy node : startNode.next()){
                         System.out.println(node.move()+" Score: "+ node.score());
