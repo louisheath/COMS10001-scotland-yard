@@ -50,9 +50,9 @@ public class Heathkinsv6 implements PlayerFactory {
             int depth = 3; 
             //Best Score and node at depth
             int best = -9999; 
-            DataNode bestNode;
+            DataNodeLegacy bestNode;
             //Save doubleMoves in variable to increase efficiency
-            Set<DataNode> doubleMoves = new HashSet<>();
+            Set<DataNodeLegacy> doubleMoves = new HashSet<>();
             //Instanstiate Scorer Object
             Scorer2 scorer = new Scorer2();
             //Types Of Ticket
@@ -79,17 +79,17 @@ public class Heathkinsv6 implements PlayerFactory {
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     
                     //Create Set Of Move Nodes
-                    Set<DataNode> nextMovesNodes = new HashSet<>();
+                    Set<DataNodeLegacy> nextMovesNodes = new HashSet<>();
                     
                     //use Ticket Move
                     while(bestmove instanceof DoubleMove) bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     
-                    //Set up starting DataNode
+                    //Set up starting DataNodeLegacy
                     PassMove pMove = new PassMove(Black);
-                    DataNode startNode = new DataNode(playerList, pMove);
+                    DataNodeLegacy startNode = new DataNodeLegacy(playerList, pMove);
                     startNode.score(-9999);
                     
-                    //Add all Ticket moves to our DataNode Set
+                    //Add all Ticket moves to our DataNodeLegacy Set
                     for(Move move : moves){
                         if (move instanceof TicketMove){
                             //ISSUE HERE MEANS WE CANT TAKE BOAT BUT FOR NOW TRYING TO KEEP PATHS OUT
@@ -103,7 +103,7 @@ public class Heathkinsv6 implements PlayerFactory {
                             int score = scorer.scorenode(graph,newPD);
                             //Dont allow black moves which put it in danger
                             if(score > 0){ 
-                                DataNode node = new DataNode(newPD, move);
+                                DataNodeLegacy node = new DataNodeLegacy(newPD, move);
                                 node.setprevious(startNode);
                                 startNode.setnext(node);
                                 nextMovesNodes.add(node);
@@ -113,7 +113,7 @@ public class Heathkinsv6 implements PlayerFactory {
                     System.out.println("Random Move is: "+bestmove);
                     
                     //Iniatilise Best Move
-                    bestNode = new DataNode(playerList,bestmove);    
+                    bestNode = new DataNodeLegacy(playerList,bestmove);    
                     
                     //Build Game tree to given depth
                     for(int i = 0; i < depth; i++){
@@ -125,7 +125,7 @@ public class Heathkinsv6 implements PlayerFactory {
                     }
                     //Score the Leaves of the Tree
                     System.out.println("Scoring final Nodes");
-                    for(DataNode node : nextMovesNodes){
+                    for(DataNodeLegacy node : nextMovesNodes){
                     int score = scorer.scorenode(graph,node.playerList());
                     node.score(score);
                     }
@@ -133,7 +133,7 @@ public class Heathkinsv6 implements PlayerFactory {
                     //MiniMax Game Tree
                     miniMax(nextMovesNodes);                   
                                
-                    for(DataNode node : startNode.next()){
+                    for(DataNodeLegacy node : startNode.next()){
                         System.out.println(node.move()+" Score: "+ node.score());
                         if (startNode.score() == node.score()){
                             bestNode = node;
@@ -157,13 +157,13 @@ public class Heathkinsv6 implements PlayerFactory {
 		}  
                 
 
-        private void miniMax(Set<DataNode> nodes) {
+        private void miniMax(Set<DataNodeLegacy> nodes) {
             System.out.println("MiniMaxing");
-            Set<DataNode> nextMovesNodes = new HashSet<>();
+            Set<DataNodeLegacy> nextMovesNodes = new HashSet<>();
             boolean end = false;
             if(nodes.isEmpty()) return;
             System.out.println(nodes.size());
-            for(DataNode node : nodes){
+            for(DataNodeLegacy node : nodes){
                 //We are back at starting nodes
                 if(node.move() instanceof PassMove) { System.out.println("Break"); end = true; break;}
                 //Keep working back up
@@ -186,16 +186,16 @@ public class Heathkinsv6 implements PlayerFactory {
         }
                 
                 
-        private Set<DataNode> nextDetectiveNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
+        private Set<DataNodeLegacy> nextDetectiveNodes(Set<DataNodeLegacy> moves, Graph<Integer, Transport> graph, int future) {
                 //Create Set Of Move Nodes
-                Set<DataNode> nextMovesNodes = new HashSet<>();
-                for(DataNode move : moves){
-                    Set<DataNode> nextPlayerNodes = new HashSet<>();
+                Set<DataNodeLegacy> nextMovesNodes = new HashSet<>();
+                for(DataNodeLegacy move : moves){
+                    Set<DataNodeLegacy> nextPlayerNodes = new HashSet<>();
                     nextPlayerNodes.add(move);
                     int i = 0;
                     for(PlayerData player : move.playerList()){
                             //Tmp storage set
-                            Set<DataNode> tmp = new HashSet<>();
+                            Set<DataNodeLegacy> tmp = new HashSet<>();
                             //ignores black on first depth as black moves passed in so detectives go next
                             if(player.colour()==Black && future == 0){  i++; continue; }
                             //Find where out where they are
@@ -227,9 +227,9 @@ public class Heathkinsv6 implements PlayerFactory {
                                             if(player.colour() == Black) score = scorer.scorenode(graph,newPD);
                                             //Dont allow black moves which put it in danger
                                             if(score > 0){ 
-                                                for(DataNode previousnode : nextPlayerNodes){
+                                                for(DataNodeLegacy previousnode : nextPlayerNodes){
                                                     //Set up node and make them point correctly
-                                                    DataNode node = new DataNode(newPD,tmove);
+                                                    DataNodeLegacy node = new DataNodeLegacy(newPD,tmove);
                                                     node.setprevious(previousnode);
                                                     previousnode.setnext(node);
                                                     tmp.add(node);
@@ -255,9 +255,9 @@ public class Heathkinsv6 implements PlayerFactory {
                                             if(player.colour() == Black) score = scorer.scorenode(graph,newPD);
                                             //Dont allow black moves which put it in danger
                                             if(score > 0){
-                                                for(DataNode previousnode : nextPlayerNodes){
+                                                for(DataNodeLegacy previousnode : nextPlayerNodes){
                                                     //Set up node and make them point correctly
-                                                    DataNode node = new DataNode(newPD,tmove);
+                                                    DataNodeLegacy node = new DataNodeLegacy(newPD,tmove);
                                                     node.setprevious(previousnode);
                                                     previousnode.setnext(node);
                                                     tmp.add(node);     

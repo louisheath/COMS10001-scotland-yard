@@ -6,18 +6,18 @@ import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
 /**
- * DataNode is an object to be used in the game tree. It stores the locations
+ * DataNodeLegacy is an object to be used in the game tree. It stores the locations
  * and tickets of players in the current state. It links to its preceding and 
  * following nodes.
  * 
- * A DataNode is a gamestate attached to the move which led to it
+ * A DataNodeLegacy is a gamestate attached to the move which led to it
  */
-public class DataNode {
+public class DataNodeLegacy {
     ////Attributes of MoveNodes
     //
     // links to previous node, and all following nodes
-    private DataNode previous;
-    private final List<DataNode> next;
+    private DataNodeLegacy previous;
+    private final List<DataNodeLegacy> next;
     // the move that led to this node
     private final Move move;
     // the locations and tickets of each player in this current state
@@ -26,7 +26,7 @@ public class DataNode {
     private int score;
     
     //How to create
-    public DataNode(List<PlayerData> playerList, Move move) {
+    public DataNodeLegacy(List<PlayerData> playerList, Move move) {
                 this.move = move;
 		this.playerList = playerList;
                 this.next = new ArrayList<>();
@@ -46,16 +46,16 @@ public class DataNode {
     public Move move() {
 		return move;
 	}
-    public List<DataNode> next() {
+    public List<DataNodeLegacy> next() {
 		return next;
 	}
-    public DataNode previous() {
+    public DataNodeLegacy previous() {
 		return previous;
 	}
-    public void setnext(DataNode node) {
+    public void setnext(DataNodeLegacy node) {
             this.next.add(node);
 	}
-    public void setprevious(DataNode node) {
+    public void setprevious(DataNodeLegacy node) {
             this.previous=node;
 	}
     

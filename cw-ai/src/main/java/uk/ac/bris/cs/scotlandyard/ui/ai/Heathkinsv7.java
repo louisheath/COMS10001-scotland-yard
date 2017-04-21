@@ -123,31 +123,19 @@ public class Heathkinsv7 implements PlayerFactory {
                         nextMovesNodes = nextDetectiveNodes(nextMovesNodes,graph,i);
                         System.out.println("OUT: "+nextMovesNodes.size());
                     }
-                    //Score the Leaves of the Tree
-                    System.out.println("Scoring final Nodes");
-                    for(DataNode node : nextMovesNodes){
-                    int score = scorer.scorenode(graph,node.playerList());
-                    node.score(score);
-                    }
-                                                                                          
-                    //MiniMax Game Tree
-                    miniMax(nextMovesNodes);
                     
                     //Alpha Beta - used wikipedia psuedo code
                     //https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
                     int alphabest = alphabeta(startNode,-999999,999999, graph);
                     System.out.println("Alpha Best:  "+ alphabest );
                     
-                    
-                    
                     for(DataNode node : startNode.next()){
-                        System.out.println(node.move()+" Score: "+ node.score());
-                        if (startNode.score() == node.score()){
+                        if (alphabest == node.score()){
                             bestNode = node;
                         }
                     }
                                      
-//need to work out when to do a double move
+                    //need to work out when to do a double move
                     bestmove = bestNode.move();
                     
                     int thismove = 0;                    
@@ -164,11 +152,12 @@ public class Heathkinsv7 implements PlayerFactory {
 		}  
                 
         private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph){
+            //If 'Leaf' Node - i.e last one
             if (node.next().isEmpty()) {
                 node.score(scorer.scorenode(graph,node.playerList())); 
                 return node.score();
             }
-            //Get Max
+            //Get Max - MrX
             if (node.next().get(0).move().colour() == Black){
                 int v = -999999;
                 for (DataNode child : node.next()){
@@ -178,7 +167,7 @@ public class Heathkinsv7 implements PlayerFactory {
                 }
                 return v;
             }
-            //Get Min
+            //Get Min - Detective
             else{
                 int v = 999999;
                 for (DataNode child : node.next()){
@@ -205,36 +194,7 @@ public class Heathkinsv7 implements PlayerFactory {
             else{
                 return a;
             }   
-        }
-
-        private void miniMax(Set<DataNode> nodes) {
-            System.out.println("MiniMaxing");
-            Set<DataNode> nextMovesNodes = new HashSet<>();
-            boolean end = false;
-            if(nodes.isEmpty()) return;
-            System.out.println(nodes.size());
-            for(DataNode node : nodes){
-                //We are back at starting nodes
-                if(node.move() instanceof PassMove) { System.out.println("Break"); end = true; break;}
-                //Keep working back up
-                else {
-                    //If MrX choose biggest score
-                    if(node.move().colour()==Black){
-                        //Or bit is for when this is first score to go back as thats initial value
-                        if(node.previous().score()<node.score() || node.previous().score()==997643) node.previous().score(node.score());
-                    }
-                    //If detective choose smallest score
-                    else{
-                        //Or bit is for when this is first score to go back as thats initial value
-                        if(node.previous().score()>node.score() || node.previous().score()==997643) node.previous().score(node.score());
-                    }
-                    //Add the previous node to the set if its not in already
-                    if(!nextMovesNodes.contains(node.previous())) nextMovesNodes.add(node.previous());
-                }
-            }
-            if(!end) miniMax(nextMovesNodes);
-        }
-                
+        }                
                 
         private Set<DataNode> nextDetectiveNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
                 //Create Set Of Move Nodes
