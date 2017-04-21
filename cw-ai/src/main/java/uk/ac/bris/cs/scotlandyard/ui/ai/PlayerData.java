@@ -32,7 +32,15 @@ public class PlayerData {
 		this.location = location;
 		this.tickets = new HashMap<>(tickets);
 	}
-
+        
+        /**
+	 * @return the colour of the player
+	 */
+	public PlayerData clone() {
+                PlayerData player = new PlayerData(this.colour,this.location,this.tickets);
+		return player;
+	}
+        
 	/**
 	 * @return the colour of the player
 	 */
