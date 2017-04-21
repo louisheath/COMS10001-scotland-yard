@@ -1,13 +1,8 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
-import uk.ac.bris.cs.scotlandyard.model.Move;
-import uk.ac.bris.cs.scotlandyard.model.Player;
-import uk.ac.bris.cs.scotlandyard.model.ScotlandYardPlayer;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
 
 /**
@@ -17,6 +12,7 @@ public class PlayerData {
     
         private final Colour colour;
         private int location;
+        
         private final Map<Ticket, Integer> tickets;
 
 	/**
@@ -31,6 +27,7 @@ public class PlayerData {
 		this.colour = colour;
 		this.location = location;
 		this.tickets = new HashMap<>(tickets);
+                
 	}
         
         /**

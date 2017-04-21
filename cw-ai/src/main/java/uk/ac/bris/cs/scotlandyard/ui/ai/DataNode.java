@@ -2,8 +2,8 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
 import java.util.List;
+import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.Move;
-import uk.ac.bris.cs.scotlandyard.model.ScotlandYardPlayer;
 
 /**
  * DataNode is an object to be used in the game tree. It stores the locations
@@ -22,6 +22,8 @@ public class DataNode {
     private final Move move;
     // the locations and tickets of each player in this current state
     private final List<PlayerData> playerList;
+    //for scorng Score of node
+    private int score;
     
     //How to create
     public DataNode(List<PlayerData> playerList, Move move) {
@@ -29,10 +31,17 @@ public class DataNode {
 		this.playerList = playerList;
                 this.next = new ArrayList<>();
                 this.previous = this;
+                this.score = 997643;
 	}
     //Simple functions to manipulate Nodes
     public List<PlayerData> playerList() {
 		return playerList;
+	}
+	public void score(int score) {
+		this.score = score;
+	}
+	public int score() {
+		return score;
 	}
     public Move move() {
 		return move;

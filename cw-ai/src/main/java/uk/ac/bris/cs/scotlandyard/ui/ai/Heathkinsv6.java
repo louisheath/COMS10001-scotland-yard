@@ -19,6 +19,7 @@ import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.DoubleMove;
 import uk.ac.bris.cs.scotlandyard.model.Move;
+import uk.ac.bris.cs.scotlandyard.model.PassMove;
 import uk.ac.bris.cs.scotlandyard.model.Player;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
@@ -46,7 +47,7 @@ public class Heathkinsv6 implements PlayerFactory {
             //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look(1 is just as what the opponents do)
-            int depth = 2; 
+            int depth = 3; 
             //Best Score and node at depth
             int best = -9999; 
             DataNode bestNode;
@@ -83,17 +84,30 @@ public class Heathkinsv6 implements PlayerFactory {
                     //use Ticket Move
                     while(bestmove instanceof DoubleMove) bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     
+                    //Set up starting DataNode
+                    PassMove pMove = new PassMove(Black);
+                    DataNode startNode = new DataNode(playerList, pMove);
+                    startNode.score(-9999);
+                    
                     //Add all Ticket moves to our DataNode Set
                     for(Move move : moves){
-                        if (move instanceof TicketMove){               
+                        if (move instanceof TicketMove){
+                            //ISSUE HERE MEANS WE CANT TAKE BOAT BUT FOR NOW TRYING TO KEEP PATHS OUT
+                            if (((TicketMove) move).ticket() == Secret) continue;
                             List<PlayerData> newPD = new ArrayList<>();
                             //Stops it altering original list objects
                             for(PlayerData p : playerList) newPD.add(p.clone());
                             TicketMove tmove = (TicketMove) move;
                             newPD.get(0).location(tmove.destination());
                             newPD.get(0).adjustTicketCount(tmove.ticket(), -1);
-                            DataNode node = new DataNode(newPD, move);
-                            nextMovesNodes.add(node);
+                            int score = scorer.scorenode(graph,newPD);
+                            //Dont allow black moves which put it in danger
+                            if(score > 0){ 
+                                DataNode node = new DataNode(newPD, move);
+                                node.setprevious(startNode);
+                                startNode.setnext(node);
+                                nextMovesNodes.add(node);
+                            }
                         }
                     }
                     System.out.println("Random Move is: "+bestmove);
@@ -103,52 +117,27 @@ public class Heathkinsv6 implements PlayerFactory {
                     
                     //Node Stuff - explore tree to depth - sets best node correctly
                     for(int i = 0; i < depth; i++){
-                        System.out.println("Depth Iteration");
-                        //Do MrX Next Move
-                        //probs dont need nextMovesNodes = nextMrXNodes(nextMovesNodes,graph,i);
+                        System.out.println("new depth:" + i);
+                        System.out.println("IN: "+nextMovesNodes.size());
                         //Do Detective Moves
-                        System.out.println(nextMovesNodes.size());
                         nextMovesNodes = nextDetectiveNodes(nextMovesNodes,graph,i);
-                        System.out.println(nextMovesNodes.size());
+                        System.out.println("OUT: "+nextMovesNodes.size());
+                    }
+                    miniMax(nextMovesNodes);
+                    for(DataNode node : startNode.next()){
+                        System.out.println(node.move()+" Score: "+ node.score());
+                        if (startNode.score() == node.score()){
+                            bestNode = node;
+                        }
                     }
                                      
-                    //find first move to get to endnode
-                    for(int i = 0; i<depth*playerList.size()-1 ;i++){
-                        if((i+1)%playerList.size()==0) System.out.println("Black?");
-                        System.out.println("Move  "+ bestNode.move());
-                         /*
-                            NOT SURE ON THIS YET
-                            if(i == depth-1){
-                            //Can we use a double move
-                            if(view.getPlayerTickets(Black, Double) > 0){
-                                //if first move isnt great or a double move would help
-                                int d = scorer.scorenode(graph,bestNode.playerList());
-                                int s = scorer.scorenode(graph,bestNode.previous().playerList());
-                                if(s < 50 || 1.8*s < d){
-                                    System.out.println("Double");
-                                   //use double move
-                                   DoubleMove doubleMove = new DoubleMove(Black,(TicketMove)bestNode.previous().move(),(TicketMove)bestNode.move());
-                                   DataNode node = new DataNode(bestNode.playerList(),doubleMove);
-                                   node.setprevious(bestNode.previous());
-                                   bestNode.setprevious(node);
-                                }
-                            }
-                        }
-*/
-                        bestNode = bestNode.previous();
-                    }
+//need to work out when to do a double move
                     bestmove = bestNode.move();
                     
                     int thismove = 0;                    
-                    if (bestmove instanceof TicketMove){
-                        thismove = scorer.scorenode(graph,bestNode.playerList());
-                    }
-                    else if (bestmove instanceof DoubleMove){
-                        thismove = scorer.scorenode(graph,bestNode.playerList());
-                    }                   
+                    thismove = scorer.scorenode(graph,bestNode.playerList());
                     
-                    System.out.println(depth + " Move Best Score:"+best);
-                    System.out.println("This Move  "+ bestmove);
+                    System.out.println("This Move  "+ bestmove );
                     System.out.println("This Move score: :"+thismove);
                     System.out.println("---------------------------");
                     System.out.println("---------New Move----------");
@@ -156,8 +145,37 @@ public class Heathkinsv6 implements PlayerFactory {
 		    // picks best move
 		    callback.accept(bestmove);
 
-		}                        
-
+		}  
+                
+        private void miniMax(Set<DataNode> nodes) {
+            System.out.println("MiniMaxing");
+            Set<DataNode> nextMovesNodes = new HashSet<>();
+            boolean end = false;
+            if(nodes.isEmpty()) return;
+            System.out.println(nodes.size());
+            for(DataNode node : nodes){
+                //We are back at starting nodes
+                if(node.move() instanceof PassMove) { System.out.println("Break"); end = true; break;}
+                //Keep working back up
+                else {
+                    //If MrX choose biggest score
+                    if(node.move().colour()==Black){
+                        //Or bit is for when this is first score to go back as thats initial value
+                        if(node.previous().score()<node.score() || node.previous().score()==997643) node.previous().score(node.score());
+                    }
+                    //If detective choose smallest score
+                    else{
+                        //Or bit is for when this is first score to go back as thats initial value
+                        if(node.previous().score()>node.score() || node.previous().score()==997643) node.previous().score(node.score());
+                    }
+                    //Add the previous node to the set if its not in already
+                    if(!nextMovesNodes.contains(node.previous())) nextMovesNodes.add(node.previous());
+                }
+            }
+            if(!end) miniMax(nextMovesNodes);
+        }
+                
+                
         private Set<DataNode> nextDetectiveNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
                 //Create Set Of Move Nodes
                 Set<DataNode> nextMovesNodes = new HashSet<>();
@@ -209,13 +227,15 @@ public class Heathkinsv6 implements PlayerFactory {
                                                        //If last player at last depth - (final nodes - e.g leaves)
                                                        if(this.depth==future+1) {
                                                            score = scorer.scorenode(graph,newPD);
+                                                           node.score(score);
                                                            if(score > this.best){  this.best = score; this.bestNode = node; }
                                                        }
                                                    }
                                                 }
                                             }
                                         }
-                                        if (player.hasTickets(Secret, 1)){
+                                        //Secret only allow if only option to limit tree size
+                                        else if (player.hasTickets(Secret, 1)){
                                             //GetPlayerData
                                             List<PlayerData> newPD = new ArrayList<>();
                                             //Stops it altering original list objects
