@@ -11,8 +11,7 @@ import uk.ac.bris.cs.scotlandyard.model.Ticket;
 public class PlayerData {
     
         private final Colour colour;
-        private int location;
-        
+        private int location;    
         private final Map<Ticket, Integer> tickets;
 
 	/**

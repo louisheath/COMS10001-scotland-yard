@@ -34,8 +34,8 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
 // TODO name the AI
-@ManagedAI("Heathkinsv6")
-public class Heathkinsv6 implements PlayerFactory {
+@ManagedAI("Heathkinsv7")
+public class Heathkinsv7 implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
@@ -131,8 +131,15 @@ public class Heathkinsv6 implements PlayerFactory {
                     }
                                                                                           
                     //MiniMax Game Tree
-                    miniMax(nextMovesNodes);                   
-                               
+                    miniMax(nextMovesNodes);
+                    
+                    //Alpha Beta - used wikipedia psuedo code
+                    //https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
+                    int alphabest = alphabeta(startNode,-999999,999999, graph);
+                    System.out.println("Alpha Best:  "+ alphabest );
+                    
+                    
+                    
                     for(DataNode node : startNode.next()){
                         System.out.println(node.move()+" Score: "+ node.score());
                         if (startNode.score() == node.score()){
@@ -156,6 +163,49 @@ public class Heathkinsv6 implements PlayerFactory {
 
 		}  
                 
+        private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph){
+            if (node.next().isEmpty()) {
+                node.score(scorer.scorenode(graph,node.playerList())); 
+                return node.score();
+            }
+            //Get Max
+            if (node.next().get(0).move().colour() == Black){
+                int v = -999999;
+                for (DataNode child : node.next()){
+                    v = max(v, alphabeta(child, alpha, beta, graph));
+                    alpha = max(alpha, v);
+                    if (beta <= alpha) break;
+                }
+                return v;
+            }
+            //Get Min
+            else{
+                int v = 999999;
+                for (DataNode child : node.next()){
+                    v = min(v, alphabeta(child, alpha, beta, graph));
+                    beta = min(beta, v);
+                    if (beta <= alpha) break;   
+                }
+                return v;
+            }
+        }
+
+        private int min(int a, int b){
+            if(a<b){
+                return a;
+            }
+            else{
+                return b;
+            }   
+        }
+        private int max(int a, int b){
+            if(a<b){
+                return b;
+            }
+            else{
+                return a;
+            }   
+        }
 
         private void miniMax(Set<DataNode> nodes) {
             System.out.println("MiniMaxing");
