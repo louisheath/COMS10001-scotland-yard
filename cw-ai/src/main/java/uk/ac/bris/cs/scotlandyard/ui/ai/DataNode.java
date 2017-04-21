@@ -6,15 +6,23 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardPlayer;
 
 /**
- * DataNode is an object to be used in the game tree. It stores a playerconfigs
- * and links to the ones before and after it.
+ * DataNode is an object to be used in the game tree. It stores the locations
+ * and tickets of players in the current state. It links to its preceding and 
+ * following nodes.
+ * 
+ * A DataNode is a gamestate attached to the move which led to it
  */
 public class DataNode {
-    //Attributes of MoveNodes
+    ////Attributes of MoveNodes
+    //
+    // links to previous node, and all following nodes
     private DataNode previous;
-    private final List<PlayerData> playerList;
-    private final Move move;
     private final List<DataNode> next;
+    // the move that led to this node
+    private final Move move;
+    // the locations and tickets of each player in this current state
+    private final List<PlayerData> playerList;
+    
     //How to create
     public DataNode(List<PlayerData> playerList, Move move) {
                 this.move = move;
