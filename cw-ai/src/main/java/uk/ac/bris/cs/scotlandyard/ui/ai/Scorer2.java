@@ -48,7 +48,7 @@ public class Scorer2 {
                     }
                 }
                 //Stops MrX going to a node from which he cannot escape
-                if(!hasEscape) edgescore = -999;
+                if(!hasEscape) { return -9998; }
             }  
             
             //Gives you shortest distance to each node from starting location
@@ -59,7 +59,9 @@ public class Scorer2 {
                 if(player.colour()!=Black)
                 {
                     //discourage going 1 move away from detectives as this is dangerous
-                    if(distance[player.location()] < 2) totaldistance -= 100;
+                    if(distance[player.location()] == 1) totaldistance -= 50;
+                    //score extremely negatively as this means youd lose
+                    else if(distance[player.location()] < 1) { return -9998; }
                     else totaldistance += distance[player.location()];
                 }
             }

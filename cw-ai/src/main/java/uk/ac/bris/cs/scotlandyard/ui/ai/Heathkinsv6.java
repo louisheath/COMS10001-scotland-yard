@@ -198,7 +198,8 @@ public class Heathkinsv6 implements PlayerFactory {
                                     //is next spot empty
                                     boolean empty = true;
                                     for(PlayerData player2 : move.playerList()){
-                                        if(player2.location() == edge.destination().value()) empty=false;
+                                        //Detectives Can land on black to win
+                                        if(player2.location() == edge.destination().value() && player2.colour()!=Black) empty=false;
                                     } 
                                     if (empty) {     
                                         if (player.hasTickets(fromTransport(edge.data()), 1)){
@@ -210,6 +211,8 @@ public class Heathkinsv6 implements PlayerFactory {
                                             //Adjust PlayerData to reflect game after this move
                                             newPD.get(i).location(edge.destination().value());
                                             newPD.get(i).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
+                                            //MrX get given detective tickets
+                                            if(player.colour()!=Black) newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), +1);
                                             int score = 1;
                                             if(player.colour() == Black) score = scorer.scorenode(graph,newPD);
                                             //Dont allow black moves which put it in danger
