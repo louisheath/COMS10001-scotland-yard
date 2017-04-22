@@ -26,7 +26,7 @@ public class Dijkstras {
         
         // prepare distances
         for (Node<Integer> node : unsettledNodes)
-            distance[node.value()] = 9;
+            distance[node.value()] = 7;
         distance[pivot] = 0;
         
         // find new distances of nodes next to pivot
@@ -58,8 +58,8 @@ public class Dijkstras {
                 }
             }
 
-            // repeat with new pivot until the closest node is 6 moves or further
-            if (newDist <= 5) pivot = newPiv;
+            // repeat with new pivot until the closest node is 4 moves or further
+            if (newDist <= 3) pivot = newPiv;
             else return distance;
         }
         

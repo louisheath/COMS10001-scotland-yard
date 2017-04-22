@@ -2,7 +2,6 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
 import java.util.List;
-import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
 /**

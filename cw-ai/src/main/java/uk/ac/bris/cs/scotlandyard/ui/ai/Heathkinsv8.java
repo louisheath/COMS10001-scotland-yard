@@ -34,8 +34,8 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
 // TODO name the AI
-@ManagedAI("Heathkinsv7")
-public class Heathkinsv7 implements PlayerFactory {
+@ManagedAI("Heathkinsv8")
+public class Heathkinsv8 implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
@@ -258,8 +258,11 @@ public class Heathkinsv7 implements PlayerFactory {
                                         else if (player.hasTickets(Secret, 1)){
                                             //GetPlayerData
                                             List<PlayerData> newPD = new ArrayList<>();
-                                            //Stops it altering original list objects
-                                            for(PlayerData p : move.playerList()) newPD.add(p.clone());
+                                            //Stops it altering original list objects by creating a new one for the moving player
+                                            for(PlayerData p : move.playerList()){ 
+                                                if(player.colour() == p.colour())newPD.add(p.clone());
+                                                else newPD.add(p);
+                                            }
                                             TicketMove tmove = new TicketMove(player.colour(),Secret,edge.destination().value());
                                             //Adjust PlayerData to reflect game after this move
                                             newPD.get(i).location(edge.destination().value());
