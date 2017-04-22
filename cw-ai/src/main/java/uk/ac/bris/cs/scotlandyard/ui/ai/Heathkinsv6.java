@@ -81,15 +81,15 @@ public class Heathkinsv6 implements PlayerFactory {
                     //Create Set Of Move Nodes
                     Set<DataNodeLegacy> nextMovesNodes = new HashSet<>();
                     
-                    //use Ticket Move
+                    // avoid using double moves
                     while(bestmove instanceof DoubleMove) bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     
                     //Set up starting DataNodeLegacy
                     PassMove pMove = new PassMove(Black);
                     DataNodeLegacy startNode = new DataNodeLegacy(playerList, pMove);
                     startNode.score(-9999);
-                    
-                    //Add all Ticket moves to our DataNodeLegacy Set
+
+                    // For every valid move, simulate its resulting game state and add to tree
                     for(Move move : moves){
                         if (move instanceof TicketMove){
                             //ISSUE HERE MEANS WE CANT TAKE BOAT BUT FOR NOW TRYING TO KEEP PATHS OUT
