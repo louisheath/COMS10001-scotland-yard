@@ -2,6 +2,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -12,6 +13,7 @@ import uk.ac.bris.cs.gamekit.graph.Node;
 
 import uk.ac.bris.cs.scotlandyard.ai.ManagedAI;
 import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
+import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.Move;
@@ -43,6 +45,17 @@ public class HeathkinsDetect implements PlayerFactory {
 	public Player createPlayer(Colour colour) {
             return new MyAI();
 	}
+        
+        // create a spectator which can return the game view after each round?
+        @Override 
+	public List<Spectator> createSpectators(ScotlandYardView view) {
+            List<Spectator> spectators = Collections.emptyList();
+            
+            Spectator spy = new Spy();
+            spectators.add(spy);
+            
+            return spectators;
+        }
 
 	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
@@ -51,11 +64,16 @@ public class HeathkinsDetect implements PlayerFactory {
             Scorer2 scorer = new Scorer2();
             
             @Override
-            public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback) {
+            public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+                
+                Graph<Integer, Transport> graph = view.getGraph();
+                int lastKnownMrX = view.getPlayerLocation(Black);
+                
+                
                 Colour colour = view.getCurrentPlayer();
                 Move bestmove = new PassMove(colour);
-                Graph<Integer, Transport> graph = view.getGraph();
-                int MrXLastKnown = view.getPlayerLocation(Black);
+                
+                
                 int rounds = 0;
                 //Work out how many rounds since MrX Surfaced
                 while(!view.getRounds().get(view.getCurrentRound()-rounds))
@@ -65,7 +83,7 @@ public class HeathkinsDetect implements PlayerFactory {
                 }
 
 
-                // picks best movegit 
+                // picks best move
                 callback.accept(bestmove);
 
             }
