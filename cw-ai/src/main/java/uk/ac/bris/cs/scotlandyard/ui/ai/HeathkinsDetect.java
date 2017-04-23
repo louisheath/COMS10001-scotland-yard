@@ -51,8 +51,8 @@ public class HeathkinsDetect implements PlayerFactory {
 	public List<Spectator> createSpectators(ScotlandYardView view) {
             List<Spectator> spectators = Collections.emptyList();
             
-            Spectator spy = new Spy();
-            spectators.add(spy);
+            Spectator s = new MrXFinder();
+            spectators.add(s);
             
             return spectators;
         }
