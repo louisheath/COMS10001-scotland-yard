@@ -26,7 +26,7 @@ public class MrXFinder implements Spectator {
     @Override
     public void onMoveMade(ScotlandYardView view, Move move) {
         int newLastKnownMrX = view.getPlayerLocation(Black);
-        // if a reveal round has just passed and mrX's location is known
+        // if a reveal round has just passed
         if (lastKnownMrX != newLastKnownMrX) {
             lastKnownMrX = newLastKnownMrX;
             possibleMrXLocations.clear();
