@@ -2,7 +2,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.Collections;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
@@ -20,7 +20,7 @@ import uk.ac.bris.cs.gamekit.graph.Edge;
  *  could be
  */
 public class MrXFinder implements Spectator {
-    Set<Integer> possibleMrXLocations = Collections.emptySet();
+    List<Integer> possibleMrXLocations = Collections.emptyList();
     int lastKnownMrX = 0;
     
     @Override
@@ -37,7 +37,7 @@ public class MrXFinder implements Spectator {
             Graph<Integer, Transport> graph = view.getGraph();
             TicketMove tMove = (TicketMove) move;
             Ticket ticketUsed = tMove.ticket();
-            Set<Integer> newMrXLocations = Collections.emptySet();
+            List<Integer> newMrXLocations = Collections.emptyList();
             
             // see which paths MrX could have taken with the ticket he used
             for (int l : possibleMrXLocations) {
@@ -45,7 +45,9 @@ public class MrXFinder implements Spectator {
                 Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(startNode);
                 for (Edge<Integer, Transport> e : edges) {
                     if (Ticket.fromTransport(e.data()) == ticketUsed) {
-                        newMrXLocations.add(e.destination().value());
+                        int destination = e.destination().value();
+                        if (!newMrXLocations.contains(destination))
+                            newMrXLocations.add(destination);
                     }
                 }
             }
@@ -54,7 +56,7 @@ public class MrXFinder implements Spectator {
         // we don't need to worry about double move calls as they're followed by two tickets.
     }
     
-    public Set<Integer> getMrXLocation() {
+    public List<Integer> getMrXLocations() {
         return possibleMrXLocations;
     }
 }

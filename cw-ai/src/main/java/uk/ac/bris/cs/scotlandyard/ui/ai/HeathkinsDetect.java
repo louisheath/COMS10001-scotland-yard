@@ -1,7 +1,10 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -22,10 +25,13 @@ import uk.ac.bris.cs.scotlandyard.model.Player;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
+import uk.ac.bris.cs.scotlandyard.model.Ticket;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Bus;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Double;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Taxi;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Bus;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Taxi;
-import static uk.ac.bris.cs.scotlandyard.model.Transport.Underground;
 
 /*
 The PlayerFactory interface also comes with three further (empty) default methods,
@@ -39,7 +45,9 @@ clean up tasks in the ready() and finish() methods, respectively.
 
 @ManagedAI("HeathkinsDetect")
 public class HeathkinsDetect implements PlayerFactory {
-        
+        // spectator has to be static in order to be accessible by MyAI ?
+        protected static MrXFinder mrXFinder = new MrXFinder();
+    
 	// TODO create a new player here
 	@Override
 	public Player createPlayer(Colour colour) {
@@ -51,8 +59,7 @@ public class HeathkinsDetect implements PlayerFactory {
 	public List<Spectator> createSpectators(ScotlandYardView view) {
             List<Spectator> spectators = Collections.emptyList();
             
-            Spectator s = new MrXFinder();
-            spectators.add(s);
+            spectators.add(mrXFinder);
             
             return spectators;
         }
@@ -60,33 +67,69 @@ public class HeathkinsDetect implements PlayerFactory {
 	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
             
-            private final Random random = new Random();
             Scorer2 scorer = new Scorer2();
             
             @Override
             public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
                 
                 Graph<Integer, Transport> graph = view.getGraph();
-                int lastKnownMrX = view.getPlayerLocation(Black);
+                List<Integer> mrXLocations = mrXFinder.getMrXLocations();
                 
+                // colour and number of current player
+                Colour playerColour = view.getCurrentPlayer();
+                int playerNumber = view.getPlayers().indexOf(playerColour);
                 
-                Colour colour = view.getCurrentPlayer();
-                Move bestmove = new PassMove(colour);
+                // Build PlayerList
+                List<PlayerData> playerList = new ArrayList<>();
+                for(Colour c : view.getPlayers()) {
+                    Map<Ticket, Integer> tickets = new HashMap<>();
+                    for(Ticket t : Arrays.asList(Bus, Taxi, Underground, Double, Secret)) tickets.put(t, view.getPlayerTickets(c, t));
+                    PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
+                    playerList.add(player);
+                }
                 
-                
-                int rounds = 0;
-                //Work out how many rounds since MrX Surfaced
-                while(!view.getRounds().get(view.getCurrentRound()-rounds))
-                {
-                    rounds++;
-                    if(view.getCurrentRound()-rounds == 0) break;
+                // of the valid moves available, find the best
+                int bestScore = 9999999;
+                Move bestMove = new PassMove(playerColour);
+                for (Move m : moves) {
+                    if (m instanceof TicketMove) {
+                        
+                        List<PlayerData> newPDList = new ArrayList<>();
+                        for(PlayerData p : playerList) newPDList.add(p.clone());
+                        
+                        TicketMove move = (TicketMove) m;
+                        
+                        // simulate move
+                        newPDList.get(playerNumber).location(move.destination());
+                        newPDList.get(playerNumber).adjustTicketCount(move.ticket(), -1);
+                        newPDList.get(0).adjustTicketCount(move.ticket(), 1);
+                        
+                        // find cumulative score for the move, checking all of mrX's
+                        // potential locations
+                        int score = 0;
+                        for (int l : mrXLocations) {
+                            newPDList.get(0).location(l);
+                            score += scorer.scorenode(graph, newPDList);
+                        }
+                        
+                        /*
+                        if(score > 0){ 
+                            DataNode node = new DataNode(newPD, move);
+                            node.setprevious(startNode);
+                            startNode.setnext(node);
+                            nextMovesNodes.add(node);
+                        }*/
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestMove = m;
+                        }
+                    }
                 }
 
-
-                // picks best move
-                callback.accept(bestmove);
-
+                callback.accept(bestMove);
             }
+            
+            
 	}
             
             
