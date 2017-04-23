@@ -23,6 +23,24 @@ public class MrXFinder implements Spectator {
     List<Integer> possibleMrXLocations = Collections.emptyList();
     int lastKnownMrX = 0;
     
+    public List<Integer> ticketOutcomes(Graph<Integer, Transport> graph, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
+        List<Integer> newMrXLocations = Collections.emptyList();
+
+        // see which paths MrX could have taken with the ticket he used
+        for (int l : possibleMrXLocations) {
+            Node startNode = graph.getNode(l);
+            Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(startNode);
+            for (Edge<Integer, Transport> e : edges) {
+                if (Ticket.fromTransport(e.data()) == ticketUsed) {
+                    int destination = e.destination().value();
+                    if (!newMrXLocations.contains(destination))
+                        newMrXLocations.add(destination);
+                }
+            }
+        }
+        return newMrXLocations;
+    }
+    
     @Override
     public void onMoveMade(ScotlandYardView view, Move move) {
         int newLastKnownMrX = view.getPlayerLocation(Black);
@@ -37,20 +55,9 @@ public class MrXFinder implements Spectator {
             Graph<Integer, Transport> graph = view.getGraph();
             TicketMove tMove = (TicketMove) move;
             Ticket ticketUsed = tMove.ticket();
-            List<Integer> newMrXLocations = Collections.emptyList();
             
-            // see which paths MrX could have taken with the ticket he used
-            for (int l : possibleMrXLocations) {
-                Node startNode = graph.getNode(l);
-                Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(startNode);
-                for (Edge<Integer, Transport> e : edges) {
-                    if (Ticket.fromTransport(e.data()) == ticketUsed) {
-                        int destination = e.destination().value();
-                        if (!newMrXLocations.contains(destination))
-                            newMrXLocations.add(destination);
-                    }
-                }
-            }
+            List<Integer> newMrXLocations = ticketOutcomes(graph, possibleMrXLocations, ticketUsed);
+            
             possibleMrXLocations = newMrXLocations;
         }
         // we don't need to worry about double move calls as they're followed by two tickets.
