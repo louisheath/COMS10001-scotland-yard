@@ -46,7 +46,7 @@ public class HeathkinsDetect implements PlayerFactory {
             return new MyAI();
 	}
         
-        // create a spectator which can return the game view after each round?
+        // create a spectator which keeps track of MrX's potential locations
         @Override 
 	public List<Spectator> createSpectators(ScotlandYardView view) {
             List<Spectator> spectators = Collections.emptyList();
