@@ -59,7 +59,7 @@ public class Scorer2 {
                 if(player.colour()!=Black)
                 {
                     //discourage going 1 move away from detectives as this is dangerous
-                    if(distance[player.location()] == 1) totaldistance -= 50;
+                    if(distance[player.location()] == 1) totaldistance -= 150;
                     //score extremely negatively as this means youd lose
                     else if(distance[player.location()] < 1) { return -9998; }
                     else totaldistance += distance[player.location()];

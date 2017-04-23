@@ -17,7 +17,6 @@ import uk.ac.bris.cs.scotlandyard.ai.ManagedAI;
 import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
-import uk.ac.bris.cs.scotlandyard.model.DoubleMove;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.PassMove;
 import uk.ac.bris.cs.scotlandyard.model.Player;
@@ -34,8 +33,8 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
 // TODO name the AI
-@ManagedAI("Heathkinsv8")
-public class Heathkinsv8 implements PlayerFactory {
+@ManagedAI("Heathkinsv10")
+public class Heathkinsv10 implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
@@ -48,22 +47,22 @@ public class Heathkinsv8 implements PlayerFactory {
             private final Random random = new Random();
             //How many moves ahead to look(1 is just as what the opponents do)
             int depth = 3; 
-            //Best Score and node at depth
-            int best = -9999; 
-            DataNode bestNode;
-            //Save doubleMoves in variable to increase efficiency
-            Set<DataNode> doubleMoves = new HashSet<>();
+            //Stops bug of depth just getting bigger and bigger
+            int depthreset = 3; 
             //Instanstiate Scorer Object
             Scorer2 scorer = new Scorer2();
             //Types Of Ticket
             List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
             
             //Create Set Of Move Nodes
-            Set<DataNode> nextMovesNodes;
+            Set<DataNode> nextMovesNodes  = new HashSet<>();
 
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
-                    nextMovesNodes = new HashSet<>();
+                    //Best Score and node at depth
+                    DataNode bestNode;
+                    //Sets up depth properly for function
+                    depth = depthreset * 2;
                     Graph<Integer, Transport> graph = view.getGraph();
                     //Build PlayerList
                     List<PlayerData> playerList = new ArrayList<>();
@@ -77,13 +76,11 @@ public class Heathkinsv8 implements PlayerFactory {
                     playerList.get(0).location(location);
                     System.out.println("Start Location Is: "+location);
                     System.out.println("Score of Start Location: " + scorer.scorenode(graph, playerList));
-                    //make sure best is reset for new move
-                    best = -9999;
+
                     //Initialise bestmove to a random move
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     
-                    //use Ticket Move
-                    while(bestmove instanceof DoubleMove) bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                   
                     
                     //Set up starting DataNode
                     PassMove pMove = new PassMove(Black);
@@ -94,44 +91,32 @@ public class Heathkinsv8 implements PlayerFactory {
                     for(Move move : moves){
                         if (move instanceof TicketMove){
                             //ISSUE HERE MEANS WE CANT TAKE BOAT BUT FOR NOW TRYING TO KEEP PATHS OUT
-                            if (((TicketMove) move).ticket() == Secret) continue;
+                            if (((TicketMove) move).ticket() == Secret ) continue;
                             List<PlayerData> newPD = new ArrayList<>();
                             //Stops it altering original list objects
                             for(PlayerData p : playerList) newPD.add(p.clone());
                             TicketMove tmove = (TicketMove) move;
                             newPD.get(0).location(tmove.destination());
                             newPD.get(0).adjustTicketCount(tmove.ticket(), -1);
-                            int score = scorer.scorenode(graph,newPD);
-                            //Dont allow black moves which put it in danger
-                            if(score > 0){ 
-                                DataNode node = new DataNode(newPD, move);
-                                node.setprevious(startNode);
-                                startNode.setnext(node);
-                                nextMovesNodes.add(node);
-                            }
+                            DataNode node = new DataNode(newPD, move);
+                            node.setprevious(startNode);
+                            startNode.setnext(node);
+                            nextMovesNodes.add(node);
                         }
                     }
-                    System.out.println("Random Move is: "+bestmove);
+                    System.out.println("Moves from starting position: "+nextMovesNodes.size());
                     
                     //Iniatilise Best Move
                     bestNode = new DataNode(playerList,bestmove);    
                     
-                    //Build Game tree to given depth
-                    for(int i = 0; i < depth; i++){
-                        System.out.println("new depth:" + i);
-                        System.out.println("IN: "+nextMovesNodes.size());
-                        //Do Detective Moves
-                        nextMovesNodes = nextNodes(nextMovesNodes,graph,i);
-                        System.out.println("OUT: "+nextMovesNodes.size());
-                    }
-
                     //Alpha Beta - used wikipedia psuedo code
                     //https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
-                    int alphabest = alphabeta(startNode,-999999,999999, graph);
+                    int alphabest = alphabeta(startNode,-999999,999999, graph, 0);
                     System.out.println("Alpha Best:  "+ alphabest );
                     
                     for(DataNode node : startNode.next()){
-                        if (alphabest == node.score()){
+                        System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
+                        if (alphabest == node.score()){     
                             bestNode = node;
                         }
                     }
@@ -149,21 +134,44 @@ public class Heathkinsv8 implements PlayerFactory {
                     System.out.println("---------New Move----------");
                     System.out.println("---------------------------");
 		    // picks best move
-		    callback.accept(bestmove);
+                    
+                    //Stops a glitch happening - if it does use a random move 
+                    if(moves.contains(bestmove)) callback.accept(bestmove);
+                    else{
+                        bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                        callback.accept(bestmove);
+                    }
 
 		}  
                 
-        private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph){
-            //If 'Leaf' Node - i.e last one
-            if (node.next().isEmpty()) {
+        private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph,int depth){    
+            //If MrX captured - return super low score
+            if(node.next().contains(node)) return -9996;
+            
+            //If 'Leaf' Node - i.e at final depth
+            if(depth == this.depth){      
                 node.score(scorer.scorenode(graph,node.playerList())); 
-                return node.score();
+                return node.score();                
+            } 
+            
+            //Generate more nodes if needed
+            if (node.next().isEmpty())
+            {
+                nextNodes(node, graph);
+
+                //If still empty no more nodes can be generated - i.e. score and return
+                if(node.next().isEmpty()){
+                    System.out.println("Node Generation didnt work");
+                    node.score(scorer.scorenode(graph,node.playerList())); 
+                    return node.score();  
+                }
             }
+            
             //Get Max - MrX
             if (node.next().get(0).move().colour() == Black){
                 int v = -999999;
                 for (DataNode child : node.next()){
-                    v = max(v, alphabeta(child, alpha, beta, graph));
+                    v = max(v, alphabeta(child, alpha, beta, graph, depth + 1));
                     alpha = max(alpha, v);
                     if (beta <= alpha) break;
                 }
@@ -174,7 +182,7 @@ public class Heathkinsv8 implements PlayerFactory {
             else{
                 int v = 999999;
                 for (DataNode child : node.next()){
-                    v = min(v, alphabeta(child, alpha, beta, graph));
+                    v = min(v, alphabeta(child, alpha, beta, graph, depth + 1));
                     beta = min(beta, v);
                     if (beta <= alpha) break;   
                 }
@@ -198,11 +206,15 @@ public class Heathkinsv8 implements PlayerFactory {
             else{
                 return a;
             }   
-        }                
-                
+        }    
+        
+        
         private Set<DataNode> nextNodes(Set<DataNode> moves, Graph<Integer, Transport> graph, int future) {
+           
                 //Create Set Of Move Nodes
                 Set<DataNode> nextNodes = new HashSet<>();
+                //Create Set Of MrX Nodes
+                Set<DataNode> MrXNodes = new HashSet<>();
                 for(DataNode move : moves){
                     Set<DataNode> nextPlayerNodes = new HashSet<>();
                     nextPlayerNodes.add(move);
@@ -211,7 +223,9 @@ public class Heathkinsv8 implements PlayerFactory {
                             //Tmp storage set
                             Set<DataNode> tmp = new HashSet<>();
                             //ignores black on first depth as black moves passed in so detectives go next
-                            if(player.colour()==Black && future == 0){  i++; continue; }
+                            if(player.colour()==Black && future == 0){  i++;
+                            MrXNodes.addAll(moves);
+                            continue; }
                             //Find where out where they are
                             int playerLocation = player.location();
                             if(graph.containsNode(playerLocation)){
@@ -293,7 +307,9 @@ public class Heathkinsv8 implements PlayerFactory {
                 }
             return nextNodes;
         } 
+
         
+   
         
     }
 }
