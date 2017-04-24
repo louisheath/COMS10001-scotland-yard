@@ -55,12 +55,16 @@ public class HeathkinsDetect2 implements PlayerFactory {
             return new MyAI();
 	}
         
+        boolean added = false;
         // create a spectator which keeps track of MrX's potential locations
         @Override 
 	public List<Spectator> createSpectators(ScotlandYardView view) {
             List<Spectator> spectators = Collections.emptyList();
             
-            spectators.add(mrXFinder);
+            if (!added) { 
+                spectators.add(mrXFinder);
+                added = true;
+            }
             
             return spectators;
         }
@@ -68,6 +72,7 @@ public class HeathkinsDetect2 implements PlayerFactory {
 	// TODO A sample player that selects a random move
 	private static class MyAI implements Player {
             Scorer2 scorer = new Scorer2();
+            private final Random random = new Random();
             // when looking ahead several rounds, MrX's possible locations will
             // change. This list holds those.
             List<Integer> futureMrXLocations;
@@ -89,7 +94,15 @@ public class HeathkinsDetect2 implements PlayerFactory {
                     PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
                     playerList.add(player);
                 }
-                                    
+                
+                // If there hasn't yet been a reveal round, then we have no idea
+                // where MrX is and so there's no use in building a tree
+                if (mrXLocations.isEmpty()) {
+                    Move randomMove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                    callback.accept(randomMove);
+                    return;
+                }
+                
                 // Create node to be start of the tree
                 PassMove pMove = new PassMove(playerColour);
                 DataNode startNode = new DataNode(playerList, pMove);
@@ -110,13 +123,14 @@ public class HeathkinsDetect2 implements PlayerFactory {
                         newPDList.get(playerNumber).adjustTicketCount(move.ticket(), -1);
                         newPDList.get(0).adjustTicketCount(move.ticket(), 1);
                         
-                        // find cumulative score for the move, checking all of mrX's
+                        // find average score for the move across all of mrX's
                         // potential locations
                         int score = 0;
                         for (int l : mrXLocations) {
                             newPDList.get(0).location(l);
                             score += scorer.scorenode(graph, newPDList);
                         }
+                        score /= mrXLocations.size();
                         
                         // configure and add to the tree
                         DataNode newNode = new DataNode(newPDList, m);
@@ -142,14 +156,7 @@ public class HeathkinsDetect2 implements PlayerFactory {
                 Move bestMove = new PassMove(playerColour);
                 callback.accept(bestMove);*/
             }
-            /*
-            
-            
-            TO FIX
-            if there hasn't been a reveal round yet, we don't know where MrX is
-            and so there is no way in scoring at all
-            
-            */
+
             public Set<DataNode> buildTree(Set<DataNode> lastLayer, ScotlandYardView view, int depth, int startPlayer) {
                 Graph<Integer, Transport> graph = view.getGraph();
                 int playerListSize = view.getPlayers().size();
@@ -160,20 +167,20 @@ public class HeathkinsDetect2 implements PlayerFactory {
                     // modulo allows us to count beyond list size and come back to start
                     int playerNum = (startPlayer + i) % playerListSize;
                     
+                    // create new nodes for every node in the most recent layer
                     for (DataNode node : lastLayer) {
-                        // work out this player's valid moves
-                        //
-                        // look at all edges leaving current location
+
                         PlayerData player = node.playerList().get(playerNum);
                         int currentLocation = player.location();
                         
                         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(currentLocation));
                         for (Edge<Integer, Transport> e : edges) {
-                            // if the destination is empty and player has tickets, simulate, score and create node
+                            // if the destination is empty
                             boolean empty = true;
                             for (PlayerData p : node.playerList()) {
                                 if (e.destination().value() == p.location() && p.colour() != Black) empty = false;
                             }
+                            // and if the player has tickets
                             if (empty && player.hasTickets(fromTransport(e.data()))) {
                                 
                                 List<PlayerData> newPDList = new ArrayList<>();
@@ -186,14 +193,16 @@ public class HeathkinsDetect2 implements PlayerFactory {
                                 newPDList.get(playerNum).adjustTicketCount(move.ticket(), -1);
                                 if (playerNum != 0) newPDList.get(0).adjustTicketCount(move.ticket(), 1);
                                 
+                                // score the move
                                 int score;
                                 if (playerNum == 0) {
                                     score = scorer.scorenode(graph, newPDList);
                                 }
-                                }
                                 else {
                                     
                                 }
+                                
+                                // create node for the move
                             }
                         }
                     }

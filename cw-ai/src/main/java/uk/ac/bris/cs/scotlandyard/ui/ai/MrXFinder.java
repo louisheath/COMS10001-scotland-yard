@@ -23,7 +23,7 @@ public class MrXFinder implements Spectator {
     List<Integer> possibleMrXLocations = Collections.emptyList();
     int lastKnownMrX = 0;
     
-    public List<Integer> ticketOutcomes(Graph<Integer, Transport> graph, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
+    public List<Integer> calcNewLocations(Graph<Integer, Transport> graph, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
         List<Integer> newMrXLocations = Collections.emptyList();
 
         // see which paths MrX could have taken with the ticket he used
@@ -56,7 +56,7 @@ public class MrXFinder implements Spectator {
             TicketMove tMove = (TicketMove) move;
             Ticket ticketUsed = tMove.ticket();
             
-            List<Integer> newMrXLocations = ticketOutcomes(graph, possibleMrXLocations, ticketUsed);
+            List<Integer> newMrXLocations = calcNewLocations(graph, possibleMrXLocations, ticketUsed);
             
             possibleMrXLocations = newMrXLocations;
         }
