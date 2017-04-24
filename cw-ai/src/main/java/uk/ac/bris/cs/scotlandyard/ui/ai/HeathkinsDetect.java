@@ -57,7 +57,7 @@ public class HeathkinsDetect implements PlayerFactory {
         // create a spectator which keeps track of MrX's potential locations
         @Override 
 	public List<Spectator> createSpectators(ScotlandYardView view) {
-            List<Spectator> spectators = Collections.emptyList();
+            List<Spectator> spectators = new ArrayList<>();
             
             spectators.add(mrXFinder);
             

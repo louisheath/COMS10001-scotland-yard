@@ -44,7 +44,7 @@ clean up tasks in the ready() and finish() methods, respectively.
 
 */
 
-@ManagedAI("HeathkinsDetect")
+@ManagedAI("HeathkinsDetect2")
 public class HeathkinsDetect2 implements PlayerFactory {
         // spectator has to be static in order to be accessible by MyAI ?
         protected static MrXFinder mrXFinder = new MrXFinder();
@@ -59,12 +59,14 @@ public class HeathkinsDetect2 implements PlayerFactory {
         // create a spectator which keeps track of MrX's potential locations
         @Override 
 	public List<Spectator> createSpectators(ScotlandYardView view) {
-            List<Spectator> spectators = Collections.emptyList();
+            List<Spectator> spectators = new ArrayList<>();
             
+            MrXFinder s = new MrXFinder();
             if (!added) { 
-                spectators.add(mrXFinder);
+                s = mrXFinder;
                 added = true;
             }
+            spectators.add(s);
             
             return spectators;
         }
@@ -73,9 +75,6 @@ public class HeathkinsDetect2 implements PlayerFactory {
 	private static class MyAI implements Player {
             Scorer2 scorer = new Scorer2();
             private final Random random = new Random();
-            // when looking ahead several rounds, MrX's possible locations will
-            // change. This list holds those.
-            List<Integer> futureMrXLocations;
             
             @Override
             public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
@@ -143,7 +142,7 @@ public class HeathkinsDetect2 implements PlayerFactory {
                 
                 // build the tree for certain number of rounds
                 int depth = 2;
-                futureMrXLocations = mrXLocations;
+                for (DataNode n : treeLayer) n.setMrXLocations(mrXLocations);
                 for (int i = 0; i < depth; i++) {
                     // buildTree adds a layer to the tree for each player
                     // that takes a turn, then returns the last layer. The nodes
@@ -151,6 +150,20 @@ public class HeathkinsDetect2 implements PlayerFactory {
                     treeLayer = buildTree(treeLayer, view, depth, playerNumber);
                 }
      
+                //Alpha Beta - used wikipedia psuedo code
+                //https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
+                int alphabest = alphabeta(startNode,-999999,999999, graph);
+
+                Move bestMove = new PassMove(playerColour);
+                DataNode bestNode = new DataNode(playerList, bestMove);
+                for(DataNode node : startNode.next()){
+                    if (alphabest == node.score()){
+                        bestNode = node; break;
+                    }
+                }
+
+                // picks best move
+                callback.accept(bestNode.move());
                 /*
                 int bestScore = 9999999;
                 Move bestMove = new PassMove(playerColour);
@@ -161,18 +174,32 @@ public class HeathkinsDetect2 implements PlayerFactory {
                 Graph<Integer, Transport> graph = view.getGraph();
                 int playerListSize = view.getPlayers().size();
                 
-                // loop through the players to create a tree layer for each of them
-                for (int i = 1; i < playerListSize; i++) {
-                    Set<DataNode> newLastLayer = new HashSet<>();
-                    // modulo allows us to count beyond list size and come back to start
-                    int playerNum = (startPlayer + i) % playerListSize;
+                Set<DataNode> newLastLayer = new HashSet<>();
+                
+                // build the tree from one node at a time
+                for (DataNode node : lastLayer) {
+                    DataNode previousNode = node;
+                    List<Integer> mrXLocations = node.mrXLocations();
                     
-                    // create new nodes for every node in the most recent layer
-                    for (DataNode node : lastLayer) {
+                    // loop through the players to create a tree layer for each of them
+                    // if it is the first iteration then the loop skips the first player
+                    int loopStart = 1;
+                    if (depth != 0) loopStart--;
+                    for (int i = loopStart; i < playerListSize; i++) {
+                        
+                        // modulo allows us to count beyond list size and come back to start
+                        int playerNum = (startPlayer + i) % playerListSize;
+                        
 
                         PlayerData player = node.playerList().get(playerNum);
                         int currentLocation = player.location();
                         
+                        int bestScore = 999999;
+                        if (playerNum == 0) bestScore = -999999;
+                        Move bestMove = new PassMove(player.colour());
+                        DataNode bestNode = new DataNode(node.playerList(), bestMove);
+                        
+                        // find the players best possible move
                         Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(currentLocation));
                         for (Edge<Integer, Transport> e : edges) {
                             // if the destination is empty
@@ -194,41 +221,94 @@ public class HeathkinsDetect2 implements PlayerFactory {
                                 if (playerNum != 0) newPDList.get(0).adjustTicketCount(move.ticket(), 1);
                                 
                                 // score the move
-                                int score;
+                                int score = 0;
                                 if (playerNum == 0) {
                                     score = scorer.scorenode(graph, newPDList);
                                 }
                                 else {
-                                    
+                                    for (int l : mrXLocations) {
+                                        newPDList.get(0).location(l);
+                                        score += scorer.scorenode(graph, newPDList);
+                                    }
+                                    score /= mrXLocations.size();
                                 }
                                 
-                                // create node for the move
+                                // check if this move is the best move
+                                if ( (playerNum == 0 && score > bestScore) ||
+                                        (playerNum !=0 && score < bestScore) ) {
+                                    bestScore = score;
+                                    bestNode = new DataNode(newPDList, move);
+                                    bestNode.score(score);
+                                }
                             }
                         }
+                        // create node for the best move
+                        bestNode.setprevious(previousNode);
+                        previousNode.setnext(bestNode);
+                        
+                        // if mrX has just made a move then update possible
+                        // locations
+                        TicketMove m = (TicketMove) bestNode.move();
+                        if (playerNum == 0) mrXLocations = mrXFinder.calcNewLocations(graph, mrXLocations, m.ticket());
+                        
+                        // if this is the last iteration of the loop then the
+                        // node is in the last layer
+                        if (i == playerListSize -1) {
+                            // store mrXLocations in the last layer so that on
+                            // the next buildTree call we know where we left off
+                            bestNode.setMrXLocations(mrXLocations);
+                            newLastLayer.add(bestNode);
+                        }
+                        
+                        // update the latest node so that the next iteration 
+                        // extends from it
+                        previousNode = bestNode;
                     }
-                    lastLayer = newLastLayer;
                 }
-                
-                
-                
-                
-                
-                if (depth != 0) {
-                    //build tree layer for startPlayer
-                    
-                }
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                return lastLayer;
+                return newLastLayer;
             }
+            
+            private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph){
+                //If 'Leaf' Node - i.e last one
+                if (node.next().isEmpty()) {
+                    node.score(scorer.scorenode(graph,node.playerList())); 
+                    return node.score();
+                }
+                //Get Min - Detective
+                if (node.next().get(0).move().colour() != Black){
+                    int v = 999999;
+                    for (DataNode child : node.next()){
+                        v = min(v, alphabeta(child, alpha, beta, graph));
+                        alpha = min(alpha, v);
+                        if (beta <= alpha) break;
+                    }
+                    node.score(v);
+                    return v;
+                }
+                //Get Max - MrX
+                else{
+                    int v = -999999;
+                    for (DataNode child : node.next()){
+                        v = max(v, alphabeta(child, alpha, beta, graph));
+                        beta = max(beta, v);
+                        if (beta <= alpha) break;   
+                    }
+                    node.score(v);
+                    return v;
+                }
+            }
+
+            private int min(int a, int b){
+                if(a < b) return a;
+                else return b; 
+            }
+            private int max(int a, int b){
+                if(a < b) return b;
+                else return a;
+            }            
 	}
+        
+        
             
             
 }

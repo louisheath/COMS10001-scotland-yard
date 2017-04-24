@@ -2,6 +2,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
 /**
@@ -23,6 +24,8 @@ public class DataNode {
     private final List<PlayerData> playerList;
     //for scorng Score of node
     private int score;
+    
+    private List<Integer> mrXLocations;
     
     //How to create
     public DataNode(List<PlayerData> playerList, Move move) {
@@ -57,5 +60,10 @@ public class DataNode {
     public void setprevious(DataNode node) {
             this.previous=node;
 	}
-    
+    public void setMrXLocations(List<Integer> locations) {
+        this.mrXLocations = locations;
+    }
+    public List<Integer> mrXLocations() {
+        return mrXLocations;
+    }
 }
