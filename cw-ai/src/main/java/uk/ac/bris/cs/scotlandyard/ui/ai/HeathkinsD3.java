@@ -35,17 +35,13 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
 
 /*
-The PlayerFactory interface also comes with three further (empty) default methods,
-which you can implement with your own custom behaviour (also see the JavaDocs of 
-PlayerFactory). To add your own spectators to the game, return your implemented 
-spectators as a List in the createSpectators method. You may perform setup and 
-clean up tasks in the ready() and finish() methods, respectively.
 
+Uses spectator, creates game tree, mini maxes with alpha-beta pruning
 
 */
 
-@ManagedAI("HeathkinsDetect2")
-public class HeathkinsDetect2 implements PlayerFactory {
+@ManagedAI("HeathkinsD3")
+public class HeathkinsD3 implements PlayerFactory {
         // spectator has to be static in order to be accessible by MyAI
         protected static MrXFinder mrXFinder = new MrXFinder();
     
