@@ -17,6 +17,7 @@ import uk.ac.bris.cs.scotlandyard.ai.ManagedAI;
 import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
+import uk.ac.bris.cs.scotlandyard.model.DoubleMove;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.PassMove;
 import uk.ac.bris.cs.scotlandyard.model.Player;
@@ -121,21 +122,33 @@ public class HeathkinsAI implements PlayerFactory {
                         if (alphabest == node.score()){     
                             bestNode = node;
                         }
-                    }
-                                     
-                    //need to work out when to do a double move
+                    }                    
                     
                     bestmove = bestNode.move();
                     
                     int thismove = 0;                    
                     thismove = scorer.scorenode(graph,bestNode.playerList());
                     
+                    //need to work out when to do a double move
+                    if(thismove<100){
+                        TicketMove firstMove = (TicketMove)bestmove;
+                        TicketMove secondMove = (TicketMove)bestmove;
+                        for(DataNode node : bestNode.next()){
+                            if (alphabest == node.score()){  
+                                bestNode = node;
+                                secondMove = (TicketMove)node.move();
+                            }
+                        }
+                        thismove = scorer.scorenode(graph,bestNode.playerList());
+                        DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
+                        bestmove = dMove;
+                    }
+                    
                     System.out.println("This Move  "+ bestmove );
                     System.out.println("This Move score: :"+thismove);
                     System.out.println("---------------------------");
                     System.out.println("---------New Move----------");
                     System.out.println("---------------------------");
-		    // picks best move
                     
                     //Stops a glitch happening - if it does use a random move 
                     if(moves.contains(bestmove)) callback.accept(bestmove);
