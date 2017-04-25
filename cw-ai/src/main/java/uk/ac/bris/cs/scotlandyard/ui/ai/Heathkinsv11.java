@@ -94,8 +94,6 @@ public class Heathkinsv11 implements PlayerFactory {
                     //Add all Ticket moves to our DataNode Set
                     for(Move move : moves){
                         if (move instanceof TicketMove){
-                            //ISSUE HERE MEANS WE CANT TAKE BOAT BUT FOR NOW TRYING TO KEEP PATHS OUT
-                            if (((TicketMove) move).ticket() == Secret) continue;
                             List<PlayerData> newPD = new ArrayList<>();
                             //Stops it altering original list objects
                             for(PlayerData p : playerList) newPD.add(p.clone());

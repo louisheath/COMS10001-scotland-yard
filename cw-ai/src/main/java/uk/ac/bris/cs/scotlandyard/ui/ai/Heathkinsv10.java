@@ -93,8 +93,6 @@ public class Heathkinsv10 implements PlayerFactory {
                     //Add all Ticket moves to our DataNode Set
                     for(Move move : moves){
                         if (move instanceof TicketMove){
-                            //ISSUE HERE MEANS WE CANT TAKE BOAT BUT FOR NOW TRYING TO KEEP PATHS OUT
-                            if (((TicketMove) move).ticket() == Secret) continue;
                             List<PlayerData> newPD = new ArrayList<>();
                             //Stops it altering original list objects
                             for(PlayerData p : playerList) newPD.add(p.clone());
@@ -164,7 +162,6 @@ public class Heathkinsv10 implements PlayerFactory {
 
                 //If still empty no more nodes can be generated - i.e. score and return
                 if(node.next().isEmpty()){
-                    System.out.println("Node Generation didnt work");
                     node.score(scorer.scorenode(graph,node.playerList())); 
                     return node.score();  
                 }
