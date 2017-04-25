@@ -19,12 +19,12 @@ import uk.ac.bris.cs.scotlandyard.model.Transport;
 
 /*
 
-No spectator, no tree, the detective goes towards lastKnownMrX
+No spectator, no tree, the detective just goes towards lastKnownMrX
 
 */
 
-@ManagedAI("HeathkinsDSimple")
-public class HeathkinsDSimple implements PlayerFactory {
+@ManagedAI("HeathkinsD1")
+public class HeathkinsD1 implements PlayerFactory {
     
     // TODO create a new player here
     @Override
