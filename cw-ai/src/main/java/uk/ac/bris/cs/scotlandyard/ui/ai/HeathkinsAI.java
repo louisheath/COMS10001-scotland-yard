@@ -46,7 +46,7 @@ public class HeathkinsAI implements PlayerFactory {
             //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look(1 is just as what the opponents do)
-            int depth = 24; 
+            int depth;
             //Stops bug of depth just getting bigger and bigger
             int depthreset = 24; 
             //Instanstiate Scorer Object
@@ -62,8 +62,8 @@ public class HeathkinsAI implements PlayerFactory {
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
                     //Best Score and node at depth
                     DataNode bestNode;
-                    //Sets up depth properly for function
-                    depth = depthreset * view.getPlayers().size();
+                    //Sets up depth properly for function - to end of game
+                    depth = (depthreset-view.getCurrentRound()) * view.getPlayers().size();
                     nextMovesNodes.clear();
                     Graph<Integer, Transport> graph = view.getGraph();
                     //Build PlayerList
@@ -253,15 +253,18 @@ public class HeathkinsAI implements PlayerFactory {
                                 newPD.get(i).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
                                 //MrX get given detective tickets
                                 if(player.colour()!=Black) newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), +1);
+                                int score = 1;
+                                if(player.colour() == Black) score = scorer.scorenode(graph,newPD);
+                                //Dont allow black moves which put it in danger
+                                if(score > 0){ 
+                                    //Set up node and make them point correctly
+                                    DataNode newnode = new DataNode(newPD,tmove);
+                                    newnode.setprevious(node);
+                                    node.setnext(newnode);
 
-                                //Set up node and make them point correctly
-                                DataNode newnode = new DataNode(newPD,tmove);
-                                newnode.setprevious(node);
-                                node.setnext(newnode);
-                                
-                                //If MrX is captured loop it to itself so we can detect it
-                                if(newPD.get(0).location() == newPD.get(i).location() && i != 0)newnode.setnext(newnode);
-
+                                    //If MrX is captured loop it to itself so we can detect it
+                                    if(newPD.get(0).location() == newPD.get(i).location() && i != 0)newnode.setnext(newnode);
+                                }
                             }
                         }
                     }             
