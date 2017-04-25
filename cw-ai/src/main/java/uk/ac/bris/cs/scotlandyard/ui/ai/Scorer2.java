@@ -53,11 +53,7 @@ public class Scorer2 {
         int[] distance = dijkstras.calculate(location, graph);
         int totaldistance = 0;
         
-        /*
-        Instead of checking if each player is MrX, remove MrX from the list?
-        
-        */
-        playerList.remove(0);
+
         // Adds up the distance of all the detectives from node.
         for(PlayerData player : playerList){
             //discourage going 1 move away from detectives as this is dangerous

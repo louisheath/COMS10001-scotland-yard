@@ -53,7 +53,8 @@ public class Heathkinsv10 implements PlayerFactory {
             Scorer2 scorer = new Scorer2();
             //Types Of Ticket
             List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
-            
+            // Create a dikstras so we can call it later
+            static Dijkstras dijkstras = new Dijkstras();
             //Create Set Of Move Nodes
             Set<DataNode> nextMovesNodes  = new HashSet<>();
 
@@ -72,6 +73,7 @@ public class Heathkinsv10 implements PlayerFactory {
                         for(Ticket t : ticketTypes) tickets.put(t, view.getPlayerTickets(c, t));
                         PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
                         playerList.add(player);
+                        System.out.println(player);
                     }
                     //Makes Black Location Correct
                     playerList.get(0).location(location);
@@ -214,7 +216,7 @@ public class Heathkinsv10 implements PlayerFactory {
         private void nextNode(DataNode node, Graph<Integer, Transport> graph) {
                 int i = 0;
                 //Find who went to make that node
-                while(node.playerList().get(i).colour() != node.move().colour()) i++; 
+                while(node.playerList().get(i).colour() != node.move().colour()) {i++; }
                 //Go to next player
                 i++;
                 //Loop around back to start if needed.
@@ -224,10 +226,16 @@ public class Heathkinsv10 implements PlayerFactory {
                 //Find where out where they are
                 int playerLocation = player.location();
                 if(graph.containsNode(playerLocation)){
+                    int[] result = dijkstras.calculateto(node.playerList().get(0).location(), graph, playerLocation);
+
                     //Find all paths from current location
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
                     //For each path check if the destination is empty then check if they have the tickets needed to follow it
                     for(Edge<Integer, Transport> edge : edges) {
+                        //Dont add move unless the detective goes towards MrX
+                        if(i!=0){ 
+                            if(result[playerLocation] < result[edge.destination().value()]) continue;
+                        }
                         //is next spot empty
                         boolean empty = true;
                         for(PlayerData player2 : node.playerList()){
