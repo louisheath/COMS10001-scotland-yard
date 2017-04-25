@@ -1,37 +1,20 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
-import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
-import uk.ac.bris.cs.gamekit.graph.Node;
 
 import uk.ac.bris.cs.scotlandyard.ai.ManagedAI;
 import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
-import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.PassMove;
 import uk.ac.bris.cs.scotlandyard.model.Player;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
-import uk.ac.bris.cs.scotlandyard.model.Ticket;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Bus;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Double;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Taxi;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
 
 /*
@@ -51,7 +34,7 @@ public class HeathkinsDSimple implements PlayerFactory {
 
     // TODO A sample player that selects a random move
     private static class MyAI implements Player {
-        Scorer2 scorer = new Scorer2();
+        Dijkstras dijkstras = new Dijkstras();
         private final Random random = new Random();
 
         @Override
@@ -60,21 +43,12 @@ public class HeathkinsDSimple implements PlayerFactory {
 
             // colour and number of current player
             Colour playerColour = view.getCurrentPlayer();
-            int playerNumber = view.getPlayers().indexOf(playerColour);
             int mrXLocation = view.getPlayerLocation(Black);
+            int playerLocation = view.getPlayerLocation(playerColour);
 
-            // Build PlayerList
-            List<PlayerData> playerList = new ArrayList<>();
-            for(Colour c : view.getPlayers()) {
-                Map<Ticket, Integer> tickets = new HashMap<>();
-                for(Ticket t : Arrays.asList(Bus, Taxi, Underground, Double, Secret)) tickets.put(t, view.getPlayerTickets(c, t));
-                PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
-                playerList.add(player);
-            }
-
-            // If there hasn't yet been a reveal round, then we have no idea
-            // where MrX is and so there's no use in building a tree
-            if (mrXLocation == 0) {
+            // If there hasn't yet been a reveal round, or if we are at lastKnownMrX
+            // then just take a random move
+            if (mrXLocation == 0 || mrXLocation == playerLocation) {
                 System.out.println(playerColour + " making random move");
                 Move randomMove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                 callback.accept(randomMove);
@@ -82,25 +56,16 @@ public class HeathkinsDSimple implements PlayerFactory {
             }
 
             Move bestMove = new PassMove(playerColour);
-            int bestScore = 9999;
+            int bestScore = 100;
             // of the valid moves available, find and make the best move
-            Set<DataNode> treeLayer = new HashSet<>();
+            int[] distances = dijkstras.calculate(mrXLocation, graph, true);
             for (Move m : moves) {
                 if (m instanceof TicketMove) {
 
-                    List<PlayerData> newPDList = new ArrayList<>();
-                    for (PlayerData p : playerList) newPDList.add(p.clone());
-
                     TicketMove move = (TicketMove) m;
 
-                    // simulate move
-                    newPDList.get(playerNumber).location(move.destination());
-                    newPDList.get(playerNumber).adjustTicketCount(move.ticket(), -1);
-                    newPDList.get(0).adjustTicketCount(move.ticket(), 1);
-
-                    // find average score for the move across all of mrX's
-                    // potential locations
-                    int score = scorer.scorenode(graph, newPDList);
+                    // find the move that will take you closest to mrX
+                    int score = distances[move.destination()];
 
                     // check if it's the best move
                     if (score < bestScore) {
@@ -109,7 +74,7 @@ public class HeathkinsDSimple implements PlayerFactory {
                     }
                 }
             }
-             System.out.println(playerColour + " making move towards lastKnownMrX");
+            System.out.println(playerColour + " making move towards lastKnownMrX");
             callback.accept(bestMove);
         }
     }

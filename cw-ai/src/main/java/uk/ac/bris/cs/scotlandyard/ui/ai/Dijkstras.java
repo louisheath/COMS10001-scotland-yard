@@ -15,8 +15,13 @@ import static uk.ac.bris.cs.scotlandyard.model.Transport.Boat;
  * Dijkstra's algorithm
  */
 public class Dijkstras {  
-
+    
     public int[] calculate(int pivot, Graph<Integer, Transport> graph){
+        return calculate(pivot, graph, false);
+    }
+    
+    // wholeTree adds an option to calculate distances for the entire tree
+    public int[] calculate(int pivot, Graph<Integer, Transport> graph, boolean wholeTree){
         
         // initiate structures
         List <Node<Integer>> unsettledNodes = new ArrayList<>();
@@ -26,7 +31,7 @@ public class Dijkstras {
         
         // prepare distances
         for (Node<Integer> node : unsettledNodes)
-            distance[node.value()] = 7;
+            distance[node.value()] = 100;
         distance[pivot] = 0;
         
         // find new distances of nodes next to pivot
@@ -50,13 +55,6 @@ public class Dijkstras {
             // find new pivot which is the closest unsettled node
             int newDist = 9;
             int newPiv = -1;
-            /*for (Edge<Integer, Transport> e : edges) {
-                int dest = e.destination().value();
-                if (distance[dest] < newDist && !settledNodes.contains(e.destination())) {
-                    newDist = distance[dest];
-                    newPiv = dest;
-                }
-            }*/
             for (Node<Integer> n : unsettledNodes) {
                 int nodeNum = n.value();
                 if (distance[nodeNum] < newDist) {
@@ -66,8 +64,8 @@ public class Dijkstras {
             }
 
             // repeat with new pivot until the closest node is 4 moves or further
-            if (newDist <= 3) pivot = newPiv;
-            else return distance;
+            if (newDist > 3 && !wholeTree) return distance;
+            else pivot = newPiv;
         }
         
         return distance;
@@ -110,13 +108,6 @@ public class Dijkstras {
             // find new pivot which is the closest unsettled node
             int newDist = 9;
             int newPiv = -1;
-            /*for (Edge<Integer, Transport> e : edges) {
-                int dest = e.destination().value();
-                if (distance[dest] < newDist && !settledNodes.contains(e.destination())) {
-                    newDist = distance[dest];
-                    newPiv = dest;
-                }
-            }*/
             for (Node<Integer> n : unsettledNodes) {
                 int nodeNum = n.value();
                 if (distance[nodeNum] < newDist) {
