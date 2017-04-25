@@ -47,7 +47,7 @@ public class Heathkinsv11 implements PlayerFactory {
             //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look(1 is just as what the opponents do)
-            int depth = 3; 
+            int depth = 4; 
             //Best Score and node at depth
             int best = -9999; 
             DataNode bestNode;

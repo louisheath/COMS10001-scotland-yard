@@ -33,8 +33,8 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
 // TODO name the AI
-@ManagedAI("Heathkinsv10")
-public class Heathkinsv10 implements PlayerFactory {
+@ManagedAI("HeathkinsAI")
+public class HeathkinsAI implements PlayerFactory {
 
 	// TODO create a new player here
 	@Override
