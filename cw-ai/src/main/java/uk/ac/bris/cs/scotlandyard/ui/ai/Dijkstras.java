@@ -24,10 +24,10 @@ public class Dijkstras {
     public int[] calculate(int pivot, Graph<Integer, Transport> graph, boolean wholeTree){
         
         // initiate structures
-        List <Node<Integer>> unsettledNodes = new ArrayList<>();
+        List<Node<Integer>> unsettledNodes = new ArrayList<>();
         unsettledNodes.addAll(graph.getNodes());
-        List <Node<Integer>> settledNodes = new ArrayList<>();
-        int[] distance = new int[unsettledNodes.size()+1];
+        List<Node<Integer>> settledNodes = new ArrayList<>();
+        int[] distance = new int[200];
         
         // prepare distances
         for (Node<Integer> node : unsettledNodes)
@@ -38,6 +38,7 @@ public class Dijkstras {
         // find new pivot which is the closest unsettled node
         // repeat with new pivot until the closest node is 6 moves or further
         while (!unsettledNodes.isEmpty()) {
+            System.out.println("Dijkstras, pivot: "+pivot);
             Node<Integer> pivotNode = graph.getNode(pivot);
             Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(pivotNode);
             
@@ -51,9 +52,10 @@ public class Dijkstras {
             // the pivot node can now be settled
             settledNodes.add(pivotNode);
             unsettledNodes.remove(pivotNode);
+            if (unsettledNodes.isEmpty()) return distance;
 
             // find new pivot which is the closest unsettled node
-            int newDist = 9;
+            int newDist = 100;
             int newPiv = -1;
             for (Node<Integer> n : unsettledNodes) {
                 int nodeNum = n.value();

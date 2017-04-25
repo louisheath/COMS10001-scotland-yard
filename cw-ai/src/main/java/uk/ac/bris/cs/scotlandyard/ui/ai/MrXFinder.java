@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
@@ -40,32 +41,37 @@ public class MrXFinder implements Spectator {
                 }
             }
         }
+        
         return newMrXLocations;
     }
     
     @Override
     public void onMoveMade(ScotlandYardView view, Move move) {
-        int newLastKnownMrX = view.getPlayerLocation(Black);
-        // if a reveal round has just passed
-        if (lastKnownMrX != newLastKnownMrX) {
-            lastKnownMrX = newLastKnownMrX;
-            possibleMrXLocations.clear();
-            possibleMrXLocations.add(lastKnownMrX);
+        if (view.getCurrentPlayer() == Black) {
+            int newLastKnownMrX = view.getPlayerLocation(Black);
+            // if a reveal round has just passed
+            if (lastKnownMrX != newLastKnownMrX) {
+                System.out.println("first if succeeded."+view.getCurrentPlayer()+lastKnownMrX+newLastKnownMrX);
+                lastKnownMrX = newLastKnownMrX;
+                possibleMrXLocations.clear();
+                possibleMrXLocations.add(lastKnownMrX);
+            }
+            // if black has just made a ticket move and we have had a reveal round
+            else if (move instanceof TicketMove && lastKnownMrX != 0) {
+                Graph<Integer, Transport> graph = view.getGraph();
+                TicketMove tMove = (TicketMove) move;
+                Ticket ticketUsed = tMove.ticket();
+
+                List<Integer> newMrXLocations = calcNewLocations(graph, possibleMrXLocations, ticketUsed);
+
+                possibleMrXLocations = newMrXLocations;
+            }
         }
-        // if black has just made a ticket move and we have had a reveal round
-        else if (view.getCurrentPlayer() == Black && move instanceof TicketMove && lastKnownMrX != 0) {
-            Graph<Integer, Transport> graph = view.getGraph();
-            TicketMove tMove = (TicketMove) move;
-            Ticket ticketUsed = tMove.ticket();
-            
-            List<Integer> newMrXLocations = calcNewLocations(graph, possibleMrXLocations, ticketUsed);
-            
-            possibleMrXLocations = newMrXLocations;
-        }
-        // we don't need to worry about double move calls as they're followed by two tickets.
     }
     
     public List<Integer> getMrXLocations() {
+        System.out.println("getMrXLocations() return value: "+Arrays.toString(possibleMrXLocations.toArray()));
+
         return possibleMrXLocations;
     }
 }

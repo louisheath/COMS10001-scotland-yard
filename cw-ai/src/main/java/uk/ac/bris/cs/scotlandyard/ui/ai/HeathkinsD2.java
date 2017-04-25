@@ -51,6 +51,8 @@ public class HeathkinsD2 implements PlayerFactory {
 
         @Override
         public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+
+            
             Graph<Integer, Transport> graph = view.getGraph();
             List<Integer> mrXLocations = mrXFinder.getMrXLocations();
 
@@ -67,7 +69,7 @@ public class HeathkinsD2 implements PlayerFactory {
                 callback.accept(randomMove);
                 return;
             }
-
+            System.out.println(playerColour+" choosing a move");
             // find the scores for each move
             int[] scores = new int[200];
             for (int l : mrXLocations) {
