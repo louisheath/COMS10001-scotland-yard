@@ -30,7 +30,7 @@ public class MrXFinder implements Spectator {
 
         // see which paths MrX could have taken with the ticket he used
         for (int l : possibleMrXLocations) {
-            Node startNode = graph.getNode(l);
+            Node<Integer> startNode = graph.getNode(l);
             Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(startNode);
             for (Edge<Integer, Transport> e : edges) {
                 if (Ticket.fromTransport(e.data()) == ticketUsed || ticketUsed == Secret) {
