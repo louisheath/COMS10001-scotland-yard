@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
@@ -12,6 +13,7 @@ import uk.ac.bris.cs.scotlandyard.model.TicketMove;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
 import uk.ac.bris.cs.gamekit.graph.Node;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 
@@ -20,18 +22,18 @@ import uk.ac.bris.cs.gamekit.graph.Edge;
  *  could be
  */
 public class MrXFinder implements Spectator {
-    List<Integer> possibleMrXLocations = Collections.emptyList();
+    List<Integer> possibleMrXLocations = new ArrayList<>();
     int lastKnownMrX = 0;
     
     public List<Integer> calcNewLocations(Graph<Integer, Transport> graph, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
-        List<Integer> newMrXLocations = Collections.emptyList();
+        List<Integer> newMrXLocations = new ArrayList<>();
 
         // see which paths MrX could have taken with the ticket he used
         for (int l : possibleMrXLocations) {
             Node startNode = graph.getNode(l);
             Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(startNode);
             for (Edge<Integer, Transport> e : edges) {
-                if (Ticket.fromTransport(e.data()) == ticketUsed) {
+                if (Ticket.fromTransport(e.data()) == ticketUsed || ticketUsed == Secret) {
                     int destination = e.destination().value();
                     if (!newMrXLocations.contains(destination))
                         newMrXLocations.add(destination);

@@ -46,7 +46,7 @@ clean up tasks in the ready() and finish() methods, respectively.
 
 @ManagedAI("HeathkinsDetect2")
 public class HeathkinsDetect2 implements PlayerFactory {
-        // spectator has to be static in order to be accessible by MyAI ?
+        // spectator has to be static in order to be accessible by MyAI
         protected static MrXFinder mrXFinder = new MrXFinder();
     
 	// TODO create a new player here
@@ -55,20 +55,10 @@ public class HeathkinsDetect2 implements PlayerFactory {
             return new MyAI();
 	}
         
-        boolean added = false;
         // create a spectator which keeps track of MrX's potential locations
         @Override 
 	public List<Spectator> createSpectators(ScotlandYardView view) {
-            List<Spectator> spectators = new ArrayList<>();
-            
-            MrXFinder s = new MrXFinder();
-            if (!added) { 
-                s = mrXFinder;
-                added = true;
-            }
-            spectators.add(s);
-            
-            return spectators;
+            return Collections.singletonList(mrXFinder);
         }
 
 	// TODO A sample player that selects a random move
@@ -105,7 +95,7 @@ public class HeathkinsDetect2 implements PlayerFactory {
                 // Create node to be start of the tree
                 PassMove pMove = new PassMove(playerColour);
                 DataNode startNode = new DataNode(playerList, pMove);
-                startNode.score(9999999);
+                startNode.score(-999999);
                 
                 // of the valid moves available, find their scores and create first layer of tree
                 Set<DataNode> treeLayer = new HashSet<>();
@@ -129,7 +119,7 @@ public class HeathkinsDetect2 implements PlayerFactory {
                             newPDList.get(0).location(l);
                             score += scorer.scorenode(graph, newPDList);
                         }
-                        score /= mrXLocations.size();
+                        score /= -1 * mrXLocations.size();
                         
                         // configure and add to the tree
                         DataNode newNode = new DataNode(newPDList, m);
@@ -149,25 +139,13 @@ public class HeathkinsDetect2 implements PlayerFactory {
                     // are still connected
                     treeLayer = buildTree(treeLayer, view, depth, playerNumber);
                 }
-     
-                //Alpha Beta - used wikipedia psuedo code
-                //https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
-                int alphabest = alphabeta(startNode,-999999,999999, graph);
 
-                Move bestMove = new PassMove(playerColour);
-                DataNode bestNode = new DataNode(playerList, bestMove);
-                for(DataNode node : startNode.next()){
-                    if (alphabest == node.score()){
-                        bestNode = node; break;
-                    }
-                }
 
-                // picks best move
-                callback.accept(bestNode.move());
-                /*
-                int bestScore = 9999999;
-                Move bestMove = new PassMove(playerColour);
-                callback.accept(bestMove);*/
+                
+                
+                
+                Move bestMove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                callback.accept(bestMove);
             }
 
             public Set<DataNode> buildTree(Set<DataNode> lastLayer, ScotlandYardView view, int depth, int startPlayer) {
@@ -181,8 +159,10 @@ public class HeathkinsDetect2 implements PlayerFactory {
                     DataNode previousNode = node;
                     List<Integer> mrXLocations = node.mrXLocations();
                     
-                    // loop through the players to create a tree layer for each of them
-                    // if it is the first iteration then the loop skips the first player
+                    // loop through the players to simulate their moves.
+                    // these will go in a new tree, and at the end the last layer
+                    // of this new tree is attached to the original node
+                    Set<DataNode> roundPossibilities = new HashSet<>();
                     int loopStart = 1;
                     if (depth != 0) loopStart--;
                     for (int i = loopStart; i < playerListSize; i++) {
@@ -190,12 +170,11 @@ public class HeathkinsDetect2 implements PlayerFactory {
                         // modulo allows us to count beyond list size and come back to start
                         int playerNum = (startPlayer + i) % playerListSize;
                         
-
                         PlayerData player = node.playerList().get(playerNum);
                         int currentLocation = player.location();
                         
-                        int bestScore = 999999;
-                        if (playerNum == 0) bestScore = -999999;
+                        int bestScore = -999999;
+                        if (playerNum == 0) bestScore = 999999;
                         Move bestMove = new PassMove(player.colour());
                         DataNode bestNode = new DataNode(node.playerList(), bestMove);
                         
@@ -208,7 +187,7 @@ public class HeathkinsDetect2 implements PlayerFactory {
                                 if (e.destination().value() == p.location() && p.colour() != Black) empty = false;
                             }
                             // and if the player has tickets
-                            if (empty && player.hasTickets(fromTransport(e.data()))) {
+                            if (empty && (player.hasTickets(fromTransport(e.data())) || player.hasTickets(Secret))) {
                                 
                                 List<PlayerData> newPDList = new ArrayList<>();
                                 for(PlayerData p : node.playerList()) newPDList.add(p.clone());
@@ -223,19 +202,19 @@ public class HeathkinsDetect2 implements PlayerFactory {
                                 // score the move
                                 int score = 0;
                                 if (playerNum == 0) {
-                                    score = scorer.scorenode(graph, newPDList);
+                                    score = -1 * scorer.scorenode(graph, newPDList);
                                 }
                                 else {
                                     for (int l : mrXLocations) {
                                         newPDList.get(0).location(l);
                                         score += scorer.scorenode(graph, newPDList);
                                     }
-                                    score /= mrXLocations.size();
+                                    score /= -1 * mrXLocations.size();
                                 }
                                 
                                 // check if this move is the best move
-                                if ( (playerNum == 0 && score > bestScore) ||
-                                        (playerNum !=0 && score < bestScore) ) {
+                                if ( (playerNum == 0 && score < bestScore) ||
+                                        (playerNum !=0 && score > bestScore) ) {
                                     bestScore = score;
                                     bestNode = new DataNode(newPDList, move);
                                     bestNode.score(score);
@@ -268,35 +247,6 @@ public class HeathkinsDetect2 implements PlayerFactory {
                 return newLastLayer;
             }
             
-            private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph){
-                //If 'Leaf' Node - i.e last one
-                if (node.next().isEmpty()) {
-                    node.score(scorer.scorenode(graph,node.playerList())); 
-                    return node.score();
-                }
-                //Get Min - Detective
-                if (node.next().get(0).move().colour() != Black){
-                    int v = 999999;
-                    for (DataNode child : node.next()){
-                        v = min(v, alphabeta(child, alpha, beta, graph));
-                        alpha = min(alpha, v);
-                        if (beta <= alpha) break;
-                    }
-                    node.score(v);
-                    return v;
-                }
-                //Get Max - MrX
-                else{
-                    int v = -999999;
-                    for (DataNode child : node.next()){
-                        v = max(v, alphabeta(child, alpha, beta, graph));
-                        beta = max(beta, v);
-                        if (beta <= alpha) break;   
-                    }
-                    node.score(v);
-                    return v;
-                }
-            }
 
             private int min(int a, int b){
                 if(a < b) return a;
