@@ -129,7 +129,7 @@ public class HeathkinsAI implements PlayerFactory {
                     
                     
                     //Choose Secret
-                    if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound())){
+                    if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound()-1)){
                     bestmove = new TicketMove(Black,Secret,((TicketMove)bestmove).destination());
                     }
                     
