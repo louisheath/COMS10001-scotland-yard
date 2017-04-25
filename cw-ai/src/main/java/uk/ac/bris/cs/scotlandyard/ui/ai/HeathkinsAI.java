@@ -55,6 +55,8 @@ public class HeathkinsAI implements PlayerFactory {
             List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
             // Create a dikstras so we can call it later
             static Dijkstras dijkstras = new Dijkstras();
+            // Create a math object so we can call it later
+            static math math = new math();
             //Create Set Of Move Nodes
             Set<DataNode> nextMovesNodes  = new HashSet<>();
 
@@ -62,7 +64,7 @@ public class HeathkinsAI implements PlayerFactory {
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
                     //Best Score and node at depth
                     DataNode bestNode;
-                    //Sets up depth properly for function - to end of game
+                    //Sets up depth properly for function - to end of 
                     depth = (depthreset-view.getCurrentRound()) * view.getPlayers().size();
                     nextMovesNodes.clear();
                     Graph<Integer, Transport> graph = view.getGraph();
@@ -170,8 +172,8 @@ public class HeathkinsAI implements PlayerFactory {
             if (node.next().get(0).move().colour() == Black){
                 int v = -999999;
                 for (DataNode child : node.next()){
-                    v = max(v, alphabeta(child, alpha, beta, graph, depth + 1));
-                    alpha = max(alpha, v);
+                    v = math.max(v, alphabeta(child, alpha, beta, graph, depth + 1));
+                    alpha = math.max(alpha, v);
                     if (beta <= alpha) break;
                 }
                 node.score(v);
@@ -181,32 +183,14 @@ public class HeathkinsAI implements PlayerFactory {
             else{
                 int v = 999999;
                 for (DataNode child : node.next()){
-                    v = min(v, alphabeta(child, alpha, beta, graph, depth + 1));
-                    beta = min(beta, v);
+                    v = math.min(v, alphabeta(child, alpha, beta, graph, depth + 1));
+                    beta = math.min(beta, v);
                     if (beta <= alpha) break;   
                 }
                 node.score(v);
                 return v;
             }
-        }
-
-        private int min(int a, int b){
-            if(a<b){
-                return a;
-            }
-            else{
-                return b;
-            }   
-        }
-        private int max(int a, int b){
-            if(a<b){
-                return b;
-            }
-            else{
-                return a;
-            }   
         }    
-        
         
         //Returns next moves node given
         private void nextNode(DataNode node, Graph<Integer, Transport> graph) {
