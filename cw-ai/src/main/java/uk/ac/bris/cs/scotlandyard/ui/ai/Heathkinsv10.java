@@ -216,7 +216,7 @@ public class Heathkinsv10 implements PlayerFactory {
         private void nextNode(DataNode node, Graph<Integer, Transport> graph) {
                 int i = 0;
                 //Find who went to make that node
-                while(node.playerList().get(i).colour() != node.move().colour()) {i++; }
+                while(node.playerList().get(i).colour() != node.move().colour()) i++;
                 //Go to next player
                 i++;
                 //Loop around back to start if needed.
@@ -234,7 +234,7 @@ public class Heathkinsv10 implements PlayerFactory {
                     for(Edge<Integer, Transport> edge : edges) {
                         //Dont add move unless the detective goes towards MrX
                         if(i!=0){ 
-                            if(result[playerLocation] < result[edge.destination().value()]) continue;
+                            if(result[playerLocation] <= result[edge.destination().value()]) continue;
                         }
                         //is next spot empty
                         boolean empty = true;
