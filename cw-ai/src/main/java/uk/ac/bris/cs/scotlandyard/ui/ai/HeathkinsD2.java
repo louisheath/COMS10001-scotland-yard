@@ -58,12 +58,12 @@ public class HeathkinsD2 implements PlayerFactory {
 
             // colour and number of current player
             Colour playerColour = view.getCurrentPlayer();
-            int mrXLocation = view.getPlayerLocation(Black);
+            int lastKnownMrX = view.getPlayerLocation(Black);
             int playerLocation = view.getPlayerLocation(playerColour);
 
             // If there hasn't yet been a reveal round, or if we are at lastKnownMrX
             // then just take a random move
-            if (mrXLocations.isEmpty() || mrXLocation == playerLocation) {
+            if (mrXLocations.isEmpty() || lastKnownMrX == playerLocation) {
                 System.out.println(playerColour + " making random move");
                 Move randomMove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                 callback.accept(randomMove);

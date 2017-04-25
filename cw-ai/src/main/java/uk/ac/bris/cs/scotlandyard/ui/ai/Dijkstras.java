@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
@@ -26,7 +27,6 @@ public class Dijkstras {
         // initiate structures
         List<Node<Integer>> unsettledNodes = new ArrayList<>();
         unsettledNodes.addAll(graph.getNodes());
-        List<Node<Integer>> settledNodes = new ArrayList<>();
         int[] distance = new int[200];
         
         // prepare distances
@@ -50,7 +50,6 @@ public class Dijkstras {
             }
 
             // the pivot node can now be settled
-            settledNodes.add(pivotNode);
             unsettledNodes.remove(pivotNode);
             if (unsettledNodes.isEmpty()) return distance;
 
