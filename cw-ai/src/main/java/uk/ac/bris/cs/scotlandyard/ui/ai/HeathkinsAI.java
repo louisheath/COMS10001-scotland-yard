@@ -121,10 +121,17 @@ public class HeathkinsAI implements PlayerFactory {
                         System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
                         if (alphabest == node.score()){     
                             bestNode = node;
+                            if(((TicketMove)node.move()).ticket() != Secret) break;
                         }
                     }                    
                     
                     bestmove = bestNode.move();
+                    
+                    
+                    //Choose Secret
+                    if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound())){
+                    bestmove = new TicketMove(Black,Secret,((TicketMove)bestmove).destination());
+                    }
                     
                     int thismove = 0;                    
                     thismove = scorer.scorenode(graph,bestNode.playerList());
