@@ -40,7 +40,7 @@ public class Dijkstras {
         while (!unsettledNodes.isEmpty()) {
             System.out.println("Dijkstras, pivot: "+pivot);
             Node<Integer> pivotNode = graph.getNode(pivot);
-            Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(pivotNode);
+            Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(pivotNode);  
             
             // find new distances of nodes next to pivot
             for (Edge<Integer, Transport> e : edges) {
@@ -65,8 +65,8 @@ public class Dijkstras {
                 }
             }
 
-            // repeat with new pivot until the closest node is 4 moves or further
-            if (newDist > 3 && !wholeTree) return distance;
+            // repeat with new pivot until the closest node is 5 moves or further
+            if (newDist > 4 && !wholeTree) return distance;
             else pivot = newPiv;
         }
         
@@ -83,7 +83,7 @@ public class Dijkstras {
         
         // prepare distances
         for (Node<Integer> node : unsettledNodes)
-            distance[node.value()] = 7;
+            distance[node.value()] = 21;
         distance[pivot] = 0;
         
         // find new distances of nodes next to pivot
@@ -118,8 +118,8 @@ public class Dijkstras {
                 }
             }
 
-            // repeat with new pivot until the closest node is 4 moves or further
-            if (newDist <= 3) pivot = newPiv;
+            // repeat with new pivot until the closest node is 21 moves or further
+            if (newDist <= 20) pivot = newPiv;
             else return distance;
         }
       return distance;

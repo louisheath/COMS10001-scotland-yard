@@ -49,7 +49,7 @@ public class HeathkinsAI implements PlayerFactory {
             //How many moves ahead to look(1 is just as what the opponents do)
             int depth;
             //Stops bug of depth just getting bigger and bigger
-            int depthreset = 24; 
+            int depthreset = 6; 
             //Instanstiate Scorer Object
             Scorer2 scorer = new Scorer2();
             //Types Of Ticket
@@ -66,7 +66,7 @@ public class HeathkinsAI implements PlayerFactory {
                     //Best Score and node at depth
                     DataNode bestNode;
                     //Sets up depth properly for function - to end of 
-                    depth = (depthreset-view.getCurrentRound()) * view.getPlayers().size();
+                    depth = (depthreset) * view.getPlayers().size();
                     nextMovesNodes.clear();
                     Graph<Integer, Transport> graph = view.getGraph();
                     //Build PlayerList
@@ -84,9 +84,7 @@ public class HeathkinsAI implements PlayerFactory {
 
                     //Initialise bestmove to a random move
                     Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                    
-                   
-                    
+                                       
                     //Set up starting DataNode
                     PassMove pMove = new PassMove(Black);
                     DataNode startNode = new DataNode(playerList, pMove);
@@ -140,12 +138,15 @@ public class HeathkinsAI implements PlayerFactory {
                     
                     //need to work out when to do a double move
                     if(thismove<100){
+                        System.out.println("Double Move");
                         TicketMove firstMove = (TicketMove)bestmove;
                         TicketMove secondMove = (TicketMove)bestmove;
                         for(DataNode node : bestNode.next()){
+                            System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
                             if (alphabest == node.score()){  
                                 bestNode = node;
                                 secondMove = (TicketMove)node.move();
+                                break;
                             }
                         }
                         thismove = scorer.scorenode(graph,bestNode.playerList());
@@ -162,18 +163,19 @@ public class HeathkinsAI implements PlayerFactory {
                     //Stops a glitch happening - if it does use a random move 
                     if(moves.contains(bestmove)) callback.accept(bestmove);
                     else{
+                        System.out.println("Error Caught");
                         bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                        System.out.println("Actual Move" + bestmove);
                         callback.accept(bestmove);
                     }
-
 		}  
                 
         private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph,int depth){    
             //If MrX captured - return super low score
-            if(node.next().contains(node)) return -9996;
+            if(node.next().contains(node)) return -9996; 
             
             //If 'Leaf' Node - i.e at final depth
-            if(depth == this.depth){      
+            if(depth == this.depth){    
                 node.score(scorer.scorenode(graph,node.playerList())); 
                 return node.score();                
             } 
