@@ -46,7 +46,7 @@ public class HeathkinsAI implements PlayerFactory {
 	private static class MyAI implements Player {
             //Allows random numbers to be generated
             private final Random random = new Random();
-            //How many moves ahead to look(1 is just as what the opponents do)
+            //How many moves ahead to look(1 is just as what the opponents do u)
             int depth;
             //Stops bug of depth just getting bigger and bigger
             int depthreset = 6; 
@@ -60,9 +60,16 @@ public class HeathkinsAI implements PlayerFactory {
             static math math = new math();
             //Create Set Of Move Nodes
             Set<DataNode> nextMovesNodes  = new HashSet<>();
+            //Store timeout data
+            long endtime;
+            //Store boolean to let us know if timeout occurs
+            boolean codecompleted;
 
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
+                    codecompleted = true;
+                    long time = System.currentTimeMillis();
+                    endtime = time+14000;
                     //Best Score and node at depth
                     DataNode bestNode;
                     //Sets up depth properly for function - to end of 
@@ -115,62 +122,80 @@ public class HeathkinsAI implements PlayerFactory {
                     int alphabest = alphabeta(startNode,-999999,999999, graph, 0);
                     System.out.println("Alpha Best:  "+ alphabest );
                     
-                    for(DataNode node : startNode.next()){
-                        System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
-                        if (alphabest == node.score()){     
-                            bestNode = node;
-                            if(((TicketMove)node.move()).ticket() != Secret) break;
-                        }
-                    }                    
+                    if(codecompleted){
                     
-                    bestmove = bestNode.move();
-                    
-                    
-                    //Choose Secret
-                    if(view.getCurrentRound()!=0){
-                        if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound()-1)){
-                        bestmove = new TicketMove(Black,Secret,((TicketMove)bestmove).destination());
-                        }
-                    }
-                    
-                    int thismove = 0;                    
-                    thismove = scorer.scorenode(graph,bestNode.playerList());
-                    
-                    //need to work out when to do a double move
-                    if(thismove<100){
-                        System.out.println("Double Move");
-                        TicketMove firstMove = (TicketMove)bestmove;
-                        TicketMove secondMove = (TicketMove)bestmove;
-                        for(DataNode node : bestNode.next()){
+                        for(DataNode node : startNode.next()){
                             System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
-                            if (alphabest == node.score()){  
+                            if (alphabest == node.score()){     
                                 bestNode = node;
-                                secondMove = (TicketMove)node.move();
-                                break;
+                                if(((TicketMove)node.move()).ticket() != Secret) break;
+                            }
+                        }                    
+
+                        bestmove = bestNode.move();
+
+
+                        //Choose Secret
+                        if(view.getCurrentRound()!=0){
+                            if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound()-1)){
+                            bestmove = new TicketMove(Black,Secret,((TicketMove)bestmove).destination());
                             }
                         }
+
+                        int thismove = 0;                    
                         thismove = scorer.scorenode(graph,bestNode.playerList());
-                        DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
-                        bestmove = dMove;
+
+                        //need to work out when to do a double move
+                        if(thismove<100){
+                            System.out.println("Double Move");
+                            TicketMove firstMove = (TicketMove)bestmove;
+                            TicketMove secondMove = (TicketMove)bestmove;
+                            for(DataNode node : bestNode.next()){
+                                System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
+                                if (alphabest == node.score()){  
+                                    bestNode = node;
+                                    secondMove = (TicketMove)node.move();
+                                    break;
+                                }
+                            }
+                            thismove = scorer.scorenode(graph,bestNode.playerList());
+                            DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
+                            bestmove = dMove;
+                        }
+
+                        System.out.println("This Move  "+ bestmove );
+                        System.out.println("This Move score: :"+thismove);
+                        System.out.println("---------------------------");
+                        System.out.println("---------New Move----------");
+                        System.out.println("---------------------------");
+
+                        //Stops a glitch happening - if it does use a random move 
+                        if(moves.contains(bestmove)) callback.accept(bestmove);
+                        else{
+                            System.out.println("Error Caught");
+                            bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                            System.out.println("Actual Move" + bestmove);
+                            callback.accept(bestmove);
+                        }
                     }
-                    
-                    System.out.println("This Move  "+ bestmove );
-                    System.out.println("This Move score: :"+thismove);
-                    System.out.println("---------------------------");
-                    System.out.println("---------New Move----------");
-                    System.out.println("---------------------------");
-                    
-                    //Stops a glitch happening - if it does use a random move 
-                    if(moves.contains(bestmove)) callback.accept(bestmove);
+                    //Choose a move quickly before true timeout
                     else{
-                        System.out.println("Error Caught");
-                        bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                        System.out.println("Time Out occured");
+                        int bscore = -9999;
+                        bestmove = new PassMove(Black);
+                        for(DataNode node : startNode.next()){
+                            int score = scorer.scorenode(graph, node.playerList());
+                            if(score > bscore){ bscore = score; bestmove = node.move(); }
+                        }
                         System.out.println("Actual Move" + bestmove);
                         callback.accept(bestmove);
                     }
 		}  
                 
-        private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph,int depth){    
+        private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph,int depth){  
+            //If over time return so code finishes
+            if(System.currentTimeMillis() >= endtime) { codecompleted = false; return -1234; }
+                    
             //If MrX captured - return super low score
             if(node.next().contains(node)) return -9996; 
             
