@@ -124,6 +124,7 @@ public class HeathkinsFinal implements PlayerFactory {
                             System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
                             if (alphabest == node.score()){     
                                 bestNode = node;
+                                //Means we dont use secret tickets unnecessarily
                                 if(((TicketMove)node.move()).ticket() != Secret) break;
                             }
                         }                    
@@ -145,22 +146,22 @@ public class HeathkinsFinal implements PlayerFactory {
                         if(thismove<100){
                             System.out.println("Double Move");
                             TicketMove firstMove = (TicketMove)bestmove;
-                            TicketMove secondMove = (TicketMove)bestmove;
-                            for(DataNode node : bestNode.next()){
-                                System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
-                                if (alphabest == node.score()){  
-                                    bestNode = node;
-                                    secondMove = (TicketMove)node.move();
-                                    break;
+                            //Work up the tree to find second MrX move
+                            for(int i = 0; i<view.getPlayers().size(); i++){
+                                System.out.println(i);
+                                for(DataNode node : bestNode.next()){
+                                    System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
+                                    if (alphabest == node.score()){  
+                                        bestNode = node; 
+                                        System.out.println(bestNode.move());
+                                        break;
+                                    }
                                 }
                             }
-                            for(Move move : moves){
-                                if (move instanceof DoubleMove){
-                                }
-                            }
+                            TicketMove secondMove = (TicketMove)bestNode.move();                            
                             thismove = scorer.scorenode(graph,bestNode.playerList());
                             DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
-                            bestmove = dMove;
+                            System.out.println(dMove);
                         }
 
                         System.out.println("This Move  "+ bestmove );

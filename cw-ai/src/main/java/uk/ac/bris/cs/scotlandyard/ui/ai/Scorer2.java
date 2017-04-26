@@ -41,8 +41,8 @@ public class Scorer2 {
                         //Score the path based on desirabilty - Boat is most as it allows large movements and Detectives can't follow
                         switch(edge.data()){
                             case Taxi: edgescore += 1; break;
-                            case Bus: edgescore += 6; break;
-                            case Underground: edgescore += 10; break;
+                            case Bus: edgescore += 7; break;
+                            case Underground: edgescore += 18; break;
                             case Boat: edgescore += 40; break;
                         }
                     }
