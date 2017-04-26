@@ -23,7 +23,6 @@ public class Dijkstras {
     
     // wholeTree adds an option to calculate distances for the entire tree
     public int[] calculate(int pivot, Graph<Integer, Transport> graph, boolean wholeTree){
-    System.out.println("Dijkstras, startPivot: "+pivot);
 
         // initiate structures
         List<Node<Integer>> unsettledNodes = new ArrayList<>();
@@ -108,7 +107,7 @@ public class Dijkstras {
             if(pivot == endpoint) return distance;
 
             // find new pivot which is the closest unsettled node
-            int newDist = 9;
+            int newDist = 21;
             int newPiv = -1;
             for (Node<Integer> n : unsettledNodes) {
                 int nodeNum = n.value();
@@ -118,9 +117,7 @@ public class Dijkstras {
                 }
             }
 
-            // repeat with new pivot until the closest node is 21 moves or further
-            if (newDist <= 20) pivot = newPiv;
-            else return distance;
+            pivot = newPiv;
         }
       return distance;
     }  
