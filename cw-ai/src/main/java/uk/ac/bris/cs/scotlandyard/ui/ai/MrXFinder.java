@@ -49,11 +49,12 @@ public class MrXFinder implements Spectator {
     public void onMoveMade(ScotlandYardView view, Move move) {
         if (view.getCurrentPlayer() == Black) {
             System.out.println("Black has made move");
-            /*
             
-            WHY IS NEWLASTKNOWNMRX ZERO ?!?!?!?!
-            
-            */
+            // if you've reset the game, then attributes need resetting
+            if (view.getCurrentRound() == 1) {
+                lastKnownMrX = 0;
+                possibleMrXLocations.clear();
+            }
             int newLastKnownMrX = view.getPlayerLocation(Black);
             // if a reveal round has just passed
             if (lastKnownMrX != newLastKnownMrX) {
