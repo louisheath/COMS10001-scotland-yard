@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -51,16 +52,19 @@ public class HeathkinsD2 implements PlayerFactory {
 
         @Override
         public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
-
+            // colour and number of current player
+            Colour playerColour = view.getCurrentPlayer();
+            System.out.println(playerColour+" makeMove called. lastKnownMrX:"+view.getPlayerLocation(Black));
+            
+            int lastKnownMrX = view.getPlayerLocation(Black);
+            int playerLocation = view.getPlayerLocation(playerColour);
             
             Graph<Integer, Transport> graph = view.getGraph();
             List<Integer> mrXLocations = mrXFinder.getMrXLocations();
 
-            // colour and number of current player
-            Colour playerColour = view.getCurrentPlayer();
-            int lastKnownMrX = view.getPlayerLocation(Black);
-            int playerLocation = view.getPlayerLocation(playerColour);
-
+            System.out.println(playerColour+" getMrXLocations() return value: "+Arrays.toString(mrXLocations.toArray()));
+            System.out.println(playerColour+" lastKnownMrX:"+view.getPlayerLocation(Black));
+            
             // If there hasn't yet been a reveal round, or if we are at lastKnownMrX
             // then just take a random move
             if (mrXLocations.isEmpty() || lastKnownMrX == playerLocation) {
@@ -69,7 +73,7 @@ public class HeathkinsD2 implements PlayerFactory {
                 callback.accept(randomMove);
                 return;
             }
-            System.out.println(playerColour+" choosing a move");
+            System.out.println(playerColour+" scoring moves, lastKnownMrX:"+view.getPlayerLocation(Black));
             // find the scores for each move
             int[] scores = new int[200];
             for (int l : mrXLocations) {
@@ -85,7 +89,7 @@ public class HeathkinsD2 implements PlayerFactory {
                     }
                 }
             }
-            
+            System.out.println(playerColour+" choosing best move, lastKnownMrX:"+view.getPlayerLocation(Black));
             // find the best move
             Move bestMove = new PassMove(playerColour);
             int bestScore = 1000;
@@ -101,7 +105,7 @@ public class HeathkinsD2 implements PlayerFactory {
                     }
                 }
             }
-            System.out.println(playerColour + " making move towards lastKnownMrX");
+            System.out.println(playerColour + " accepting best move, MrX:"+view.getPlayerLocation(Black));
             callback.accept(bestMove);
         }
     }

@@ -48,6 +48,7 @@ public class MrXFinder implements Spectator {
     @Override
     public void onMoveMade(ScotlandYardView view, Move move) {
         if (view.getCurrentPlayer() == Black) {
+            System.out.println("Black has made move");
             /*
             
             WHY IS NEWLASTKNOWNMRX ZERO ?!?!?!?!
@@ -56,7 +57,7 @@ public class MrXFinder implements Spectator {
             int newLastKnownMrX = view.getPlayerLocation(Black);
             // if a reveal round has just passed
             if (lastKnownMrX != newLastKnownMrX) {
-                System.out.println("first if succeeded."+view.getCurrentPlayer()+lastKnownMrX+" new:"+newLastKnownMrX);
+                System.out.println("first if succeeded. lastKnownMrX:"+lastKnownMrX+" newLastKnownMrX:"+newLastKnownMrX);
                 lastKnownMrX = newLastKnownMrX;
                 possibleMrXLocations.clear();
                 possibleMrXLocations.add(lastKnownMrX);
@@ -75,8 +76,6 @@ public class MrXFinder implements Spectator {
     }
     
     public List<Integer> getMrXLocations() {
-        System.out.println("getMrXLocations() return value: "+Arrays.toString(possibleMrXLocations.toArray()));
-
         return possibleMrXLocations;
     }
 }
