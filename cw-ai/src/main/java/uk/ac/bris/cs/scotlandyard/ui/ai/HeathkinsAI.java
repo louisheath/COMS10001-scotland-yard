@@ -49,7 +49,7 @@ public class HeathkinsAI implements PlayerFactory {
             //How many moves ahead to look(1 is just as what the opponents do u)
             int depth;
             //Stops bug of depth just getting bigger and bigger
-            int depthreset = 24; 
+            int depthreset = 10; 
             //Instanstiate Scorer Object
             Scorer2 scorer = new Scorer2();
             //Types Of Ticket
@@ -194,7 +194,10 @@ public class HeathkinsAI implements PlayerFactory {
                 
         private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph,int depth){  
             //If over time return so code finishes
-            if(System.currentTimeMillis() >= endtime) { codecompleted = false; return -1234; }
+            if(System.currentTimeMillis() >= endtime) { //codecompleted = false;
+            node.score(scorer.scorenode(graph,node.playerList())); 
+            return node.score();  
+            }
                     
             //If MrX captured - return super low score
             if(node.next().contains(node)) return -9996; 
@@ -213,7 +216,7 @@ public class HeathkinsAI implements PlayerFactory {
 
                 //If still empty no more nodes can be generated - i.e. score and return
                 if(node.next().isEmpty()){
-                    System.out.println("yep as i thought");
+                    System.out.println("yep as i thought, depth: "+depth);
                     node.score(scorer.scorenode(graph,node.playerList())); 
                     return node.score();  
                 }
@@ -257,7 +260,7 @@ public class HeathkinsAI implements PlayerFactory {
                 //Find where out where they are
                 int playerLocation = player.location();
                 if(graph.containsNode(playerLocation)){
-                    int[] result = dijkstras.calculateto(node.playerList().get(0).location(), graph, playerLocation);
+                    int[] result = dijkstras.calculate(node.playerList().get(0).location(), graph, true);
 
                     //Find all paths from current location
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
@@ -265,7 +268,7 @@ public class HeathkinsAI implements PlayerFactory {
                     for(Edge<Integer, Transport> edge : edges) {
                         //Dont add move unless the detective goes towards MrX
                         if(i!=0){ 
-                            if(result[playerLocation] <= result[edge.destination().value()]) continue;
+                            if(result[playerLocation] < result[edge.destination().value()]) continue;
                         }
                         //is next spot empty
                         boolean empty = true;
