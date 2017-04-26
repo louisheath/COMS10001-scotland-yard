@@ -39,13 +39,16 @@ public class HeathkinsD1 implements PlayerFactory {
 
         @Override
         public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
-            Graph<Integer, Transport> graph = view.getGraph();
-
-            // colour and number of current player
             Colour playerColour = view.getCurrentPlayer();
+            System.out.println(playerColour+" makeMove called. lastKnownMrX:"+view.getPlayerLocation(Black));
+            Graph<Integer, Transport> graph = view.getGraph();
+            
+            // colour and number of current player
+            
             int mrXLocation = view.getPlayerLocation(Black);
             int playerLocation = view.getPlayerLocation(playerColour);
-
+            
+            System.out.println(playerColour+" lastKnownMrX:"+view.getPlayerLocation(Black));
             // If there hasn't yet been a reveal round, or if we are at lastKnownMrX
             // then just take a random move
             if (mrXLocation == 0 || mrXLocation == playerLocation) {
@@ -54,7 +57,7 @@ public class HeathkinsD1 implements PlayerFactory {
                 callback.accept(randomMove);
                 return;
             }
-
+            System.out.println(playerColour+" choosing best move, lastKnownMrX:"+view.getPlayerLocation(Black));
             Move bestMove = new PassMove(playerColour);
             int bestScore = 100;
             // of the valid moves available, find and make the best move
@@ -74,7 +77,9 @@ public class HeathkinsD1 implements PlayerFactory {
                     }
                 }
             }
-            System.out.println(playerColour + " making move towards lastKnownMrX");
+            
+            
+            System.out.println(playerColour + " making move towards lastKnownMrX:"+view.getPlayerLocation(Black));
             callback.accept(bestMove);
         }
     }
