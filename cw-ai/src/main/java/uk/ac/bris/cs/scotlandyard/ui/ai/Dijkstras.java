@@ -23,7 +23,7 @@ public class Dijkstras {
     
     // wholeTree adds an option to calculate distances for the entire tree
     public int[] calculate(int pivot, Graph<Integer, Transport> graph, boolean wholeTree){
-        System.out.println("Dijkstras, startPivot: "+pivot);
+
         // initiate structures
         List<Node<Integer>> unsettledNodes = new ArrayList<>();
         unsettledNodes.addAll(graph.getNodes());
