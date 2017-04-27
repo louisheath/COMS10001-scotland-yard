@@ -22,8 +22,8 @@ import uk.ac.bris.cs.gamekit.graph.Edge;
  *  could be
  */
 public class MrXFinder implements Spectator {
-    List<Integer> possibleMrXLocations = new ArrayList<>();
-    int lastKnownMrX = 0;
+    private List<Integer> possibleMrXLocations = new ArrayList<>();
+    private int lastKnownMrX = 0;
     
     public List<Integer> calcNewLocations(ScotlandYardView view, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
         List<Integer> newMrXLocations = new ArrayList<>();

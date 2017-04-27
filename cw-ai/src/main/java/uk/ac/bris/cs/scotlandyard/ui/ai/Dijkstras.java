@@ -28,7 +28,7 @@ public class Dijkstras {
     * 
     * any integer between 0 and 200 is a valid endpoint
     * 0 calculates distances up to 5 nodes away
-    * -1 calculates distances for the entire tree
+    * -1 calculates distances for the entire graph
     *   
     */
 
