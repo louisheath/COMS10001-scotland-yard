@@ -151,7 +151,6 @@ public class HeathkinsMrX implements PlayerFactory {
                 nextNode(dummyNode, graph);
                 int bestsofar = -9999;
                 for(DataNode node : dummyNode.next()){
-                    System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
                     List<PlayerData> newPD = new ArrayList<>();
                     //Stops it altering original list objects by creating a new one for the moving player
                     for(PlayerData p : node.playerList()){ 
