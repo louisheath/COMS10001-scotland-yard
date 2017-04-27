@@ -36,148 +36,147 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 @ManagedAI("HeathkinsMrX")
 public class HeathkinsMrX implements PlayerFactory {
 
+    @Override
+    public Player createPlayer(Colour colour) {
+        return new MrXAI();
+    }
+
+    public static class MrXAI implements Player {
+        //Allows random numbers to be generated
+        private final Random random = new Random();
+        //How many moves ahead to look(1 is just as what the opponents do u)
+        int depth;
+        //Stops bug of depth just getting bigger and bigger
+        int depthreset = 24; 
+        //Instanstiate Scorer Object
+        Scorer scorer = new Scorer();
+        //Types Of Ticket
+        List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
+        // Create a Dijkstras so we can call it later
+        static Dijkstras dijkstras = new Dijkstras();
+        // Create a Maths object so we can call it later(Max and Min)
+        static Maths maths = new Maths();
+        //Create Set Of Move Nodes
+        Set<DataNode> nextMovesNodes  = new HashSet<>();
+        //Store timeout data
+        long endtime;
+
 	@Override
-	public Player createPlayer(Colour colour) {
-            return new MrXAI();
-	}
+	public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
+            System.out.println("MrX Making Move ........");
+            long time = System.currentTimeMillis();
+            endtime = time+14000;
+            //Sets up depth properly for function - to end of 
+            depth = (depthreset-view.getCurrentRound()) * view.getPlayers().size();
+            //Makes sure no moves are present from the last MrX move
+            nextMovesNodes.clear();
+            Graph<Integer, Transport> graph = view.getGraph();
+            
+            //Build PlayerList
+            List<PlayerData> playerList = new ArrayList<>();
+            for(Colour c : view.getPlayers()){
+                Map<Ticket, Integer> tickets = new HashMap<>();
+                for(Ticket t : ticketTypes) tickets.put(t, view.getPlayerTickets(c, t));
+                PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
+                playerList.add(player);
+            }
+            //Makes Black Location Correct
+            playerList.get(0).location(location);
+            System.out.println("Start Location Is: "+location);
+            System.out.println("Score of Start Location: " + scorer.scorenode(graph, playerList));
 
-	public static class MrXAI implements Player {
-            //Allows random numbers to be generated
-            private final Random random = new Random();
-            //How many moves ahead to look(1 is just as what the opponents do u)
-            int depth;
-            //Stops bug of depth just getting bigger and bigger
-            int depthreset = 24; 
-            //Instanstiate Scorer Object
-            Scorer scorer = new Scorer();
-            //Types Of Ticket
-            List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
-            // Create a dikstras so we can call it later
-            static Dijkstras dijkstras = new Dijkstras();
-            // Create a math object so we can call it later
-            static Maths maths = new Maths();
-            //Create Set Of Move Nodes
-            Set<DataNode> nextMovesNodes  = new HashSet<>();
-            //Store timeout data
-            long endtime;
-
-		@Override
-		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
-                System.out.println("MrX Making Move ........");
-                    long time = System.currentTimeMillis();
-                    endtime = time+14000;
-                    //Best Score and node at depth
-                    DataNode bestNode;
-                    //Sets up depth properly for function - to end of 
-                    depth = (depthreset-view.getCurrentRound()) * view.getPlayers().size();
-                    nextMovesNodes.clear();
-                    Graph<Integer, Transport> graph = view.getGraph();
-                    //Build PlayerList
-                    List<PlayerData> playerList = new ArrayList<>();
-                    for(Colour c : view.getPlayers()){
-                        Map<Ticket, Integer> tickets = new HashMap<>();
-                        for(Ticket t : ticketTypes) tickets.put(t, view.getPlayerTickets(c, t));
-                        PlayerData player = new PlayerData(c, view.getPlayerLocation(c),tickets);
-                        playerList.add(player);
-                    }
-                    //Makes Black Location Correct
-                    playerList.get(0).location(location);
-                    System.out.println("Start Location Is: "+location);
-                    System.out.println("Score of Start Location: " + scorer.scorenode(graph, playerList));
-
-                    //Initialise bestmove to a random move
-                    Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+            //Initialise bestmove to a random move
+            Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+            //Iniatilise Best Node
+            DataNode bestNode = new DataNode(playerList,bestmove); 
                                        
-                    //Set up starting DataNode
-                    PassMove pMove = new PassMove(Black);
-                    DataNode startNode = new DataNode(playerList, pMove);
-                    startNode.score(-9999);
+            //Set up startNode
+            PassMove pMove = new PassMove(Black);
+            DataNode startNode = new DataNode(playerList, pMove);
+            startNode.score(-9999);
                     
-                    //Add all Ticket moves to our DataNode Set
-                    for(Move move : moves){
-                        if (move instanceof TicketMove){
-                            List<PlayerData> newPD = new ArrayList<>();
-                            //Stops it altering original list objects
-                            for(PlayerData p : playerList) newPD.add(p.clone());
-                            TicketMove tmove = (TicketMove) move;
-                            newPD.get(0).location(tmove.destination());
-                            newPD.get(0).adjustTicketCount(tmove.ticket(), -1);
-                            DataNode node = new DataNode(newPD, move);
-                            node.setprevious(startNode);
-                            startNode.setnext(node);
-                            nextMovesNodes.add(node);
+            //Add all Ticket moves to our DataNode Set
+            for(Move move : moves){
+                if (move instanceof TicketMove){
+                    List<PlayerData> newPD = new ArrayList<>();
+                    //Stops it altering original list objects
+                    for(PlayerData p : playerList) newPD.add(p.clone());
+                    TicketMove tmove = (TicketMove) move;
+                    //Adjust tickets and location accordingly
+                    newPD.get(0).location(tmove.destination());
+                    newPD.get(0).adjustTicketCount(tmove.ticket(), -1);
+                    //Build node and link it up
+                    DataNode node = new DataNode(newPD, move);
+                    node.setprevious(startNode);
+                    startNode.setnext(node);
+                    //Add to set of nodes
+                    nextMovesNodes.add(node);
+                }
+            }        
+            //Run alphabeta on the startNode to find the best option, alphabest is the score of the best option
+            int alphabest = alphabeta(startNode,-999999,999999, graph, 0);
+            System.out.println("Alpha Best:  "+ alphabest );
+            
+            //Look which move follows the best path found by alphabeta
+            for(DataNode node : startNode.next()){
+                System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
+                if (alphabest == node.score()){     
+                    bestNode = node;
+                    //Means we dont use secret tickets unnecessarily
+                    if(((TicketMove)node.move()).ticket() != Secret) break;
+                }
+            }                    
+
+            //Assign the move stored in bestNode to bestmove
+            bestmove = bestNode.move();
+
+
+            //Choose Secret if last round location was revealed and we still have secret remaining
+            if(view.getCurrentRound()!=0){
+                if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound()-1)){
+                    bestmove = new TicketMove(Black,Secret,((TicketMove)bestmove).destination());
+                }
+            }
+
+            //Score this move
+            int thismove = 0;                    
+            thismove = scorer.scorenode(graph,bestNode.playerList());
+
+            //need to work out when to do a double move
+            if(thismove<100){
+                System.out.println("Double Move");
+                TicketMove firstMove = (TicketMove)bestmove;
+                //Work up the tree to find second MrX move
+                for(int i = 0; i<view.getPlayers().size(); i++){
+                    System.out.println(i);
+                    for(DataNode node : bestNode.next()){
+                        System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
+                        if (alphabest == node.score()){  
+                            bestNode = node; 
+                            System.out.println(bestNode.move());
+                            break;
                         }
                     }
-                    System.out.println("Moves from starting position: "+nextMovesNodes.size());
-                    
-                    //Iniatilise Best Move
-                    bestNode = new DataNode(playerList,bestmove);    
-                    
-                    //Alpha Beta - used wikipedia psuedo code
-                    //https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
-                    int alphabest = alphabeta(startNode,-999999,999999, graph, 0);
-                    System.out.println("Alpha Best:  "+ alphabest );
-                    
-                        for(DataNode node : startNode.next()){
-                            System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
-                            if (alphabest == node.score()){     
-                                bestNode = node;
-                                //Means we dont use secret tickets unnecessarily
-                                if(((TicketMove)node.move()).ticket() != Secret) break;
-                            }
-                        }                    
+                }
+                TicketMove secondMove = (TicketMove)bestNode.move();                            
+                DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
+                System.out.println(dMove);
+            }
 
-                        bestmove = bestNode.move();
+            System.out.println("This Move  "+ bestmove );
+            System.out.println("---------------------------");
+            System.out.println("---------New Move----------");
+            System.out.println("---------------------------");
 
-
-                        //Choose Secret
-                        if(view.getCurrentRound()!=0){
-                            if(startNode.playerList().get(0).hasTickets(Secret, 1) && view.getRounds().get(view.getCurrentRound()-1)){
-                            bestmove = new TicketMove(Black,Secret,((TicketMove)bestmove).destination());
-                            }
-                        }
-
-                        int thismove = 0;                    
-                        thismove = scorer.scorenode(graph,bestNode.playerList());
-
-                        //need to work out when to do a double move
-                        if(thismove<100){
-                            System.out.println("Double Move");
-                            TicketMove firstMove = (TicketMove)bestmove;
-                            //Work up the tree to find second MrX move
-                            for(int i = 0; i<view.getPlayers().size(); i++){
-                                System.out.println(i);
-                                for(DataNode node : bestNode.next()){
-                                    System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
-                                    if (alphabest == node.score()){  
-                                        bestNode = node; 
-                                        System.out.println(bestNode.move());
-                                        break;
-                                    }
-                                }
-                            }
-                            TicketMove secondMove = (TicketMove)bestNode.move();                            
-                            thismove = scorer.scorenode(graph,bestNode.playerList());
-                            DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
-                            System.out.println(dMove);
-                        }
-
-                        System.out.println("This Move  "+ bestmove );
-                        System.out.println("This Move score: :"+thismove);
-                        System.out.println("---------------------------");
-                        System.out.println("---------New Move----------");
-                        System.out.println("---------------------------");
-
-                        //Stops a glitch happening - if it does use a random move 
-                        if(moves.contains(bestmove)) callback.accept(bestmove);
-                        else{
-                            System.out.println("Error Caught");
-                            bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                            System.out.println("Actual Move" + bestmove);
-                            callback.accept(bestmove);
-                        }
-                    
-		}  
+            //Stops a glitch happening - if it does use a random move 
+            if(moves.contains(bestmove)) callback.accept(bestmove);
+            else{
+                    System.out.println("Error Caught");
+                    bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
+                    System.out.println("Actual Move" + bestmove);
+                    callback.accept(bestmove);
+            }            
+	}  
                 
         private int alphabeta(DataNode node, int alpha,int beta, Graph<Integer, Transport> graph,int depth){  
             //If over time return with score of this node
@@ -233,66 +232,63 @@ public class HeathkinsMrX implements PlayerFactory {
         
         //Returns next moves node given
         private void nextNode(DataNode node, Graph<Integer, Transport> graph) {
-                int i = 0;
-                //Find who went to make that node
-                while(node.playerList().get(i).colour() != node.move().colour()) i++;
-                //Go to next player
-                i++;
-                //Loop around back to start if needed.
-                i=i%(node.playerList().size());
+            int i = 0;
+            //Find who went to make that node
+            while(node.playerList().get(i).colour() != node.move().colour()) i++;
+            //Go to next player
+            i++;
+            //Loop around back to start if needed.
+            i=i%(node.playerList().size());
 
-                PlayerData player = node.playerList().get(i);
-                //Find where out where they are
-                int playerLocation = player.location();
-                if(graph.containsNode(playerLocation)){
-                    int[] result = dijkstras.calculate(node.playerList().get(0).location(), graph, -1);
+            PlayerData player = node.playerList().get(i);
+            //Find where out where they are
+            int playerLocation = player.location();
+            if(graph.containsNode(playerLocation)){
+                int[] result = dijkstras.calculate(node.playerList().get(0).location(), graph, -1);
 
-                    //Find all paths from current location
-                    Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
-                    //For each path check if the destination is empty then check if they have the tickets needed to follow it
-                    for(Edge<Integer, Transport> edge : edges) {
-                        //Dont add move unless the detective goes towards MrX or stays same distance
-                        if(i!=0){ 
-                            if(result[playerLocation] < result[edge.destination().value()]) continue;
-                        }
-                        //is next spot empty
-                        boolean empty = true;
-                        for(PlayerData player2 : node.playerList()){
-                            //Detectives Can land on black to win
-                            if(player2.location() == edge.destination().value() && player2.colour()!=Black) empty=false;
-                        } 
-                        if (empty) {    
-                            if (player.hasTickets(fromTransport(edge.data()), 1)){
-                                //GetPlayerData
-                                List<PlayerData> newPD = new ArrayList<>();
-                                //Stops it altering original list objects by creating a new one for the moving player
-                                for(PlayerData p : node.playerList()){ 
-                                    if(player.colour() == p.colour())newPD.add(p.clone());
-                                    else newPD.add(p);
-                                }
-                                TicketMove tmove = new TicketMove(player.colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
-                                //Adjust PlayerData to reflect game after this move
-                                newPD.get(i).location(edge.destination().value());
-                                newPD.get(i).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
-                                //MrX get given detective tickets
-                                if(player.colour()!=Black) newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), +1);
-
-                                //Set up node and make them point correctly
-                                DataNode newnode = new DataNode(newPD,tmove);
-                                newnode.setprevious(node);
-                                node.setnext(newnode);
-                                
-                                //If MrX is captured loop it to itself so we can detect it
-                                if(newPD.get(0).location() == newPD.get(i).location() && i != 0)newnode.setnext(newnode);
-
+                //Find all paths from current location
+                Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));
+                //For each path check if the destination is empty then check if they have the tickets needed to follow it
+                for(Edge<Integer, Transport> edge : edges) {
+                    //Dont add move unless the detective goes towards MrX or stays same distance
+                    if(i!=0){ 
+                        if(result[playerLocation] < result[edge.destination().value()]) continue;
+                    }
+                    //is next spot empty
+                    boolean empty = true;
+                    for(PlayerData player2 : node.playerList()){
+                        //Detectives Can land on black to win
+                        if(player2.location() == edge.destination().value() && player2.colour()!=Black) empty=false;
+                    } 
+                    if (empty) {    
+                        if (player.hasTickets(fromTransport(edge.data()), 1)){
+                            //GetPlayerData
+                            List<PlayerData> newPD = new ArrayList<>();
+                            //Stops it altering original list objects by creating a new one for the moving player
+                            for(PlayerData p : node.playerList()){ 
+                            if(player.colour() == p.colour())newPD.add(p.clone());
+                            else newPD.add(p);
                             }
+                            TicketMove tmove = new TicketMove(player.colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
+                            //Adjust PlayerData to reflect game after this move
+                            newPD.get(i).location(edge.destination().value());
+                            newPD.get(i).adjustTicketCount(Ticket.fromTransport(edge.data()), -1);
+                            //MrX get given detective tickets
+                            if(player.colour()!=Black) newPD.get(0).adjustTicketCount(Ticket.fromTransport(edge.data()), +1);
+
+                            //Set up node and make them point correctly
+                            DataNode newnode = new DataNode(newPD,tmove);
+                            newnode.setprevious(node);
+                            node.setnext(newnode);
+
+                            //If MrX is captured loop it to itself so we can detect it
+                            if(newPD.get(0).location() == newPD.get(i).location() && i != 0)newnode.setnext(newnode);
                         }
-                    }             
-                }      
+                    }
+                }             
+            }      
         } 
 
-        
-   
         
     }
 }

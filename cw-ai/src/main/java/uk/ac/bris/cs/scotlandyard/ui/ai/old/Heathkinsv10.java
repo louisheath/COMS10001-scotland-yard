@@ -46,9 +46,9 @@ public class Heathkinsv10 implements PlayerFactory {
             //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look(1 is just as what the opponents do)
-            int depth = 24; 
+            int depth = 3; 
             //Stops bug of depth just getting bigger and bigger
-            int depthreset = 24; 
+            int depthreset = 3; 
             //Instanstiate Scorer Object
             Scorer2 scorer = new Scorer2();
             //Types Of Ticket
