@@ -141,11 +141,11 @@ public class HeathkinsMrX implements PlayerFactory {
             //Score this move
             int thismove = 0;                    
             thismove = scorer.scorenode(graph,bestNode.playerList());
-
+            
+            TicketMove firstMove = (TicketMove)bestmove;
             //need to work out when to do a double move
             if(thismove<100){
                 System.out.println("Double Move");
-                TicketMove firstMove = (TicketMove)bestmove;
                 Move dummyMove = new PassMove(view.getPlayers().get(view.getPlayers().size()-1));
                 DataNode dummyNode = new DataNode(bestNode.playerList(),dummyMove);
                 nextNode(dummyNode, graph);
@@ -180,10 +180,13 @@ public class HeathkinsMrX implements PlayerFactory {
             //Stops a glitch happening - if it does use a random move 
             if(moves.contains(bestmove)) callback.accept(bestmove);
             else{
+                if(moves.contains(firstMove)) callback.accept(firstMove);
+                else{
                     System.out.println("Error Caught");
                     bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
                     System.out.println("Actual Move" + bestmove);
                     callback.accept(bestmove);
+                }    
             }            
 	}  
                 
