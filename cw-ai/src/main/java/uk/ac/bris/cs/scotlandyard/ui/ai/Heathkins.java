@@ -6,7 +6,6 @@ import uk.ac.bris.cs.scotlandyard.ai.PlayerFactory;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.Player;
-import uk.ac.bris.cs.scotlandyard.ui.ai.HeathkinsD2.DetectiveV2;
 import uk.ac.bris.cs.scotlandyard.ui.ai.HeathkinsMrX.MrXAI;
 
 @ManagedAI("Heathkins")
@@ -16,6 +15,6 @@ public class Heathkins implements PlayerFactory {
 	@Override
 	public Player createPlayer(Colour colour) {
             if(colour == Black) return new MrXAI();
-            else return new DetectiveV2();
+            else return new MrXAI(); //should be detective
 	}
     }        
