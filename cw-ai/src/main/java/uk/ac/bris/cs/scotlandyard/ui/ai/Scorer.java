@@ -12,10 +12,6 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
 
-/**
- *
- * @author Will
- */
 public class Scorer {
     //Create a dikstras so we can call it later
     static Dijkstras dijkstras = new Dijkstras();

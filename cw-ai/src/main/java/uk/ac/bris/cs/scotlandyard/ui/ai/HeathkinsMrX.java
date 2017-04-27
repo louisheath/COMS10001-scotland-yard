@@ -64,9 +64,10 @@ public class HeathkinsMrX implements PlayerFactory {
 	@Override
 	public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
             System.out.println("MrX Making Move ........");
+            //Set the time endpoint to 14 seconds in the future
             long time = System.currentTimeMillis();
             endtime = time+14000;
-            //Sets up depth properly for function - to end of 
+            //Sets up depth properly for function - to end of game
             depth = (depthreset-view.getCurrentRound()) * view.getPlayers().size();
             //Makes sure no moves are present from the last MrX move
             nextMovesNodes.clear();
@@ -82,9 +83,7 @@ public class HeathkinsMrX implements PlayerFactory {
             }
             //Makes Black Location Correct
             playerList.get(0).location(location);
-            System.out.println("Start Location Is: "+location);
-            System.out.println("Score of Start Location: " + scorer.scorenode(graph, playerList));
-
+            
             //Initialise bestmove to a random move
             Move bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
             //Iniatilise Best Node
@@ -115,11 +114,9 @@ public class HeathkinsMrX implements PlayerFactory {
             }        
             //Run alphabeta on the startNode to find the best option, alphabest is the score of the best option
             int alphabest = alphabeta(startNode,-999999,999999, graph, 0);
-            System.out.println("Alpha Best:  "+ alphabest );
             
             //Look which move follows the best path found by alphabeta
             for(DataNode node : startNode.next()){
-                System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
                 if (alphabest == node.score()){     
                     bestNode = node;
                     //Means we dont use secret tickets unnecessarily
@@ -145,7 +142,6 @@ public class HeathkinsMrX implements PlayerFactory {
             TicketMove firstMove = (TicketMove)bestmove;
             //need to work out when to do a double move
             if(thismove<100){
-                System.out.println("Double Move");
                 Move dummyMove = new PassMove(view.getPlayers().get(view.getPlayers().size()-1));
                 DataNode dummyNode = new DataNode(bestNode.playerList(),dummyMove);
                 nextNode(dummyNode, graph);
@@ -168,23 +164,17 @@ public class HeathkinsMrX implements PlayerFactory {
                 }
                 TicketMove secondMove = (TicketMove)bestNode.move();                            
                 DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
-                System.out.println(dMove);
                 bestmove = dMove;
             }
-
-            System.out.println("This Move  "+ bestmove );
-            System.out.println("---------------------------");
-            System.out.println("---------New Move----------");
-            System.out.println("---------------------------");
 
             //Stops a glitch happening - if it does use a random move 
             if(moves.contains(bestmove)) callback.accept(bestmove);
             else{
+                //check if it was just an issue with a double move first - use just the first part
                 if(moves.contains(firstMove)) callback.accept(firstMove);
                 else{
-                    System.out.println("Error Caught");
+                    //Error been caught - choose random move
                     bestmove = new ArrayList<>(moves).get(random.nextInt(moves.size()));
-                    System.out.println("Actual Move" + bestmove);
                     callback.accept(bestmove);
                 }    
             }            
@@ -281,6 +271,7 @@ public class HeathkinsMrX implements PlayerFactory {
                             if(player.colour() == p.colour())newPD.add(p.clone());
                             else newPD.add(p);
                             }
+                            //Build new ticket
                             TicketMove tmove = new TicketMove(player.colour(),Ticket.fromTransport(edge.data()),edge.destination().value());
                             //Adjust PlayerData to reflect game after this move
                             newPD.get(i).location(edge.destination().value());
