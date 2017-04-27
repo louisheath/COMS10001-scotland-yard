@@ -24,8 +24,6 @@ public class DataNode {
     //for scorng Score of node
     private int score;
     
-    private List<Integer> mrXLocations;
-    
     //How to create
     public DataNode(List<PlayerData> playerList, Move move) {
                 this.move = move;
@@ -59,10 +57,4 @@ public class DataNode {
     public void setprevious(DataNode node) {
             this.previous=node;
 	}
-    public void setMrXLocations(List<Integer> locations) {
-        this.mrXLocations = locations;
-    }
-    public List<Integer> mrXLocations() {
-        return mrXLocations;
-    }
 }

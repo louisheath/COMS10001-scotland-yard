@@ -26,19 +26,22 @@ import uk.ac.bris.cs.scotlandyard.model.Transport;
 /*
 
 Uses a spectator, no tree
-The detective goes towards the nearest of MrX's possible locations
+The detective goes towards the average of all possible MrX locations
+If detective can move onto a possible MrX location it will do so
+    This will remove possibilites for the other detectives and make their moves
+    more accurate
 
 */
 
-@ManagedAI("HeathkinsD3")
-public class HeathkinsD3 implements PlayerFactory {
+@ManagedAI("HeathkinsDetective")
+public class HeathkinsDetective implements PlayerFactory {
     // spectator has to be static in order to be accessible by MyAI
     protected static MrXFinder mrXFinder = new MrXFinder();
 
     // TODO create a new player here
     @Override
     public Player createPlayer(Colour colour) {
-        return new DetectiveV3();
+        return new MyAI();
     }
 
     // create a spectator which keeps track of MrX's potential locations
@@ -47,13 +50,14 @@ public class HeathkinsD3 implements PlayerFactory {
         return Collections.singletonList(mrXFinder);
     }
 
-    
-    public static class DetectiveV3 implements Player {
+    // TODO A sample player that selects a random move
+    public static class MyAI implements Player {
         Dijkstras dijkstras = new Dijkstras();
         private final Random random = new Random();
 
         @Override
         public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+            System.out.println(view.getCurrentPlayer() + " Detective Making Move ........");
             Graph<Integer, Transport> graph = view.getGraph();
             
             // key info about current player
@@ -111,11 +115,9 @@ public class HeathkinsD3 implements PlayerFactory {
 
                         TicketMove move = (TicketMove) m;
                         int dest = move.destination();
+                        // find the move that will take you closest to mrX
                         
-                        // the score for each destination node will be its distance
-                        // from the nearest possible MrX location
-                        if (distances[dest] < scores[dest])
-                            scores[dest] = distances[dest];
+                        scores[dest] += distances[dest];
                         
                         // If you can land on a possible MX, go for it
                         if (distances[dest] == 0) {
@@ -130,7 +132,6 @@ public class HeathkinsD3 implements PlayerFactory {
             int bestScore = 1000;
             for (Move m : moves) {
                 if (m instanceof TicketMove) {
-
                     TicketMove move = (TicketMove) m;
                     int dest = move.destination();
                     

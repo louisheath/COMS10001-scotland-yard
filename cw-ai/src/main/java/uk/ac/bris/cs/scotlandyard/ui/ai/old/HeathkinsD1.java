@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.ui.ai;
+package uk.ac.bris.cs.scotlandyard.ui.ai.old;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +19,7 @@ import uk.ac.bris.cs.scotlandyard.model.Player;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
+import uk.ac.bris.cs.scotlandyard.ui.ai.Dijkstras;
 
 /*
 
