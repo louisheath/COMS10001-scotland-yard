@@ -12,6 +12,7 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
 import uk.ac.bris.cs.scotlandyard.model.TicketMove;
 import uk.ac.bris.cs.scotlandyard.model.Ticket;
+import uk.ac.bris.cs.scotlandyard.model.Colour;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
@@ -26,9 +27,9 @@ public class MrXFinder implements Spectator {
     List<Integer> possibleMrXLocations = new ArrayList<>();
     int lastKnownMrX = 0;
     
-    public List<Integer> calcNewLocations(Graph<Integer, Transport> graph, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
+    public List<Integer> calcNewLocations(ScotlandYardView view, List<Integer> possibleMrXLocations, Ticket ticketUsed) {
         List<Integer> newMrXLocations = new ArrayList<>();
-
+        Graph<Integer, Transport> graph = view.getGraph();
         // see which paths MrX could have taken with the ticket he used
         for (int l : possibleMrXLocations) {
             Node<Integer> startNode = graph.getNode(l);
@@ -36,7 +37,22 @@ public class MrXFinder implements Spectator {
             for (Edge<Integer, Transport> e : edges) {
                 if (Ticket.fromTransport(e.data()) == ticketUsed || ticketUsed == Secret) {
                     int destination = e.destination().value();
-                    if (!newMrXLocations.contains(destination))
+                    
+                    // make sure that no detectives are occupying the destination
+                    // this is key when MrX is almost cornered, as his options are
+                    // far less
+                    List<Colour> players = new ArrayList<>();
+                    players.addAll(view.getPlayers());
+                    players.remove(Black);
+                    List<Integer> playerLocations = new ArrayList();
+                    for (Colour p : players) {
+                        playerLocations.add(view.getPlayerLocation(p));
+                    }
+                    boolean emptyNode = true;
+                    if (playerLocations.contains(destination)) emptyNode = false;
+                    
+                    
+                    if (!newMrXLocations.contains(destination) && emptyNode)
                         newMrXLocations.add(destination);
                 }
             }
@@ -47,8 +63,8 @@ public class MrXFinder implements Spectator {
     
     @Override
     public void onMoveMade(ScotlandYardView view, Move move) {
-        if (view.getCurrentPlayer() == Black) {
-            System.out.println("Black has made move");
+        Colour currentPlayer = view.getCurrentPlayer();
+        if (currentPlayer == Black) {
             
             // if you've reset the game, then attributes need resetting
             if (view.getCurrentRound() == 1) {
@@ -58,7 +74,6 @@ public class MrXFinder implements Spectator {
             int newLastKnownMrX = view.getPlayerLocation(Black);
             // if a reveal round has just passed
             if (lastKnownMrX != newLastKnownMrX) {
-                System.out.println("first if succeeded. lastKnownMrX:"+lastKnownMrX+" newLastKnownMrX:"+newLastKnownMrX);
                 lastKnownMrX = newLastKnownMrX;
                 possibleMrXLocations.clear();
                 possibleMrXLocations.add(lastKnownMrX);
@@ -69,10 +84,12 @@ public class MrXFinder implements Spectator {
                 TicketMove tMove = (TicketMove) move;
                 Ticket ticketUsed = tMove.ticket();
 
-                List<Integer> newMrXLocations = calcNewLocations(graph, possibleMrXLocations, ticketUsed);
-
-                possibleMrXLocations = newMrXLocations;
+                possibleMrXLocations = calcNewLocations(view, possibleMrXLocations, ticketUsed);
             }
+        }
+        // if a detective can confirm that MrX isn't on a node, then remove it
+        else if (possibleMrXLocations.contains(view.getPlayerLocation(currentPlayer))) {
+            possibleMrXLocations.remove((Integer) view.getPlayerLocation(currentPlayer));
         }
     }
     
