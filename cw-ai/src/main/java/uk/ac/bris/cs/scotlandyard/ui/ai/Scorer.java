@@ -41,14 +41,14 @@ public class Scorer {
                         //Score the path based on desirabilty - Boat is most as it allows large movements and Detectives can't follow
                         switch(edge.data()){
                             case Taxi: edgescore += 1; break;
-                            case Bus: edgescore += 7; break;
-                            case Underground: edgescore += 18; break;
+                            case Bus: edgescore += 3; break;
+                            case Underground: edgescore += 8; break;
                             case Boat: edgescore += 40; break;
                         }
                     }
                 }
                 //Stops MrX going to a node from which he cannot escape
-                if(!hasEscape) { return -9998; }
+                if(!hasEscape) { return -9997; }
             }  
             
             //Gives you shortest distance to each node from starting location

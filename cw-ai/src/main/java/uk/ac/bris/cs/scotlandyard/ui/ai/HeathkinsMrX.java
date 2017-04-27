@@ -146,21 +146,31 @@ public class HeathkinsMrX implements PlayerFactory {
             if(thismove<100){
                 System.out.println("Double Move");
                 TicketMove firstMove = (TicketMove)bestmove;
-                //Work up the tree to find second MrX move
-                for(int i = 0; i<view.getPlayers().size(); i++){
-                    System.out.println(i);
-                    for(DataNode node : bestNode.next()){
-                        System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
-                        if (alphabest == node.score()){  
-                            bestNode = node; 
-                            System.out.println(bestNode.move());
-                            break;
-                        }
+                Move dummyMove = new PassMove(view.getPlayers().get(view.getPlayers().size()-1));
+                DataNode dummyNode = new DataNode(bestNode.playerList(),dummyMove);
+                nextNode(dummyNode, graph);
+                int bestsofar = -9999;
+                for(DataNode node : dummyNode.next()){
+                    System.out.println("Move: "+ node.move()+ "Score :"+ node.score());
+                    List<PlayerData> newPD = new ArrayList<>();
+                    //Stops it altering original list objects by creating a new one for the moving player
+                    for(PlayerData p : node.playerList()){ 
+                        if(p.colour() == Black )newPD.add(p.clone());
+                        else newPD.add(p);
+                    }
+                    //Adjust PlayerData to reflect game after this move
+                    newPD.get(0).location(((TicketMove)node.move()).destination());
+                    newPD.get(0).adjustTicketCount(((TicketMove)node.move()).ticket(), -1);
+                    int tmp = scorer.scorenode(graph,newPD);
+                    if(tmp > bestsofar){
+                        bestsofar = tmp;
+                        bestNode = node;
                     }
                 }
                 TicketMove secondMove = (TicketMove)bestNode.move();                            
                 DoubleMove dMove = new DoubleMove(Black,firstMove,secondMove);
                 System.out.println(dMove);
+                bestmove = dMove;
             }
 
             System.out.println("This Move  "+ bestmove );

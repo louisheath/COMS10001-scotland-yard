@@ -41,7 +41,7 @@ public class HeathkinsDetective implements PlayerFactory {
     // TODO create a new player here
     @Override
     public Player createPlayer(Colour colour) {
-        return new MyAI();
+        return new DetectiveV2();
     }
 
     // create a spectator which keeps track of MrX's potential locations
@@ -50,8 +50,7 @@ public class HeathkinsDetective implements PlayerFactory {
         return Collections.singletonList(mrXFinder);
     }
 
-    // TODO A sample player that selects a random move
-    public static class MyAI implements Player {
+    public static class DetectiveV2 implements Player {
         Dijkstras dijkstras = new Dijkstras();
         private final Random random = new Random();
 
