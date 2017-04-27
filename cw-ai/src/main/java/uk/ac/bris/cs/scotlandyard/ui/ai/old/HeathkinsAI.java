@@ -55,9 +55,9 @@ public class HeathkinsAI implements PlayerFactory {
             //Types Of Ticket
             List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
             // Create a dikstras so we can call it later
-            static Dijkstras dijkstras = new Dijkstras();
+            static DijkstrasClean dijkstras = new DijkstrasClean();
             // Create a math object so we can call it later
-            static math math = new math();
+            static Maths math = new Maths();
             //Create Set Of Move Nodes
             Set<DataNode> nextMovesNodes  = new HashSet<>();
             //Store timeout data
@@ -260,7 +260,7 @@ public class HeathkinsAI implements PlayerFactory {
                 //Find where out where they are
                 int playerLocation = player.location();
                 if(graph.containsNode(playerLocation)){
-                    int[] result = dijkstras.calculate(node.playerList().get(0).location(), graph, true);
+                    int[] result = dijkstras.calculateto(node.playerList().get(0).location(), graph, -1);
 
                     //Find all paths from current location
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));

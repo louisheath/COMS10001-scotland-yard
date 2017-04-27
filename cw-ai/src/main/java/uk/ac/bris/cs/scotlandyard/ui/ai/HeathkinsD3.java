@@ -1,7 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +38,7 @@ public class HeathkinsD3 implements PlayerFactory {
     // TODO create a new player here
     @Override
     public Player createPlayer(Colour colour) {
-        return new MyAI();
+        return new DetectiveV3();
     }
 
     // create a spectator which keeps track of MrX's potential locations
@@ -48,8 +47,8 @@ public class HeathkinsD3 implements PlayerFactory {
         return Collections.singletonList(mrXFinder);
     }
 
-    // TODO A sample player that selects a random move
-    private static class MyAI implements Player {
+    
+    public static class DetectiveV3 implements Player {
         Dijkstras dijkstras = new Dijkstras();
         private final Random random = new Random();
 
@@ -106,7 +105,7 @@ public class HeathkinsD3 implements PlayerFactory {
             // Scores each valid move
             int[] scores = new int[200];
             for (int l : mrXLocations) {
-                int[] distances = dijkstras.calculate(l, graph, true);
+                int[] distances = dijkstras.calculateto(l, graph, -1);
                 for (Move m : moves) {
                     if (m instanceof TicketMove) {
 

@@ -4,11 +4,11 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.Collection;
-import java.util.List;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
+import uk.ac.bris.cs.scotlandyard.model.Colour;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.Black;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.Secret;
+import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 import uk.ac.bris.cs.scotlandyard.model.Transport;
 
@@ -16,57 +16,51 @@ import uk.ac.bris.cs.scotlandyard.model.Transport;
  *
  * @author Will
  */
-public class Scorer {
+public class Scorerold {
     //Create a dikstras so we can call it later
     static Dijkstras dijkstras = new Dijkstras();
-    public int scorenode(Graph<Integer, Transport> graph, List<PlayerData> playerList){
-            int location = playerList.get(0).location();
+    public int scorenode(ScotlandYardView view, int location, int depth){
             //Create Variables to store scores in
             int score;
             int edgescore = 0;
             int totaldistance = 0;
-            
+            Graph<Integer, Transport> graph = view.getGraph();
             //work out how many usuable paths leaving node
             if(graph.containsNode(location))
             {
                 //Find all paths from current location
                 Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(location));
-                //Set boolean to see if MrX has tickets to escape from node
-                Boolean hasEscape = false;
                 //For each path check if the destination is empty then check if they have the tickets needed to follow it
                 for (Edge<Integer, Transport> edge : edges) {
-                    if (playerList.get(0).hasTickets(fromTransport(edge.data()), 1) || playerList.get(0).hasTickets(Secret, 1));
+                    if (view.getPlayerTickets(Black, fromTransport(edge.data()))>0);
                     {
-                        hasEscape = true;
                         //Score the path based on desirabilty - Boat is most as it allows large movements and Detectives can't follow
                         switch(edge.data()){
-                            case Taxi: edgescore += 1; break;
-                            case Bus: edgescore += 7; break;
-                            case Underground: edgescore += 18; break;
-                            case Boat: edgescore += 40; break;
+                            case Taxi: edgescore = edgescore + 1; break;
+                            case Bus: edgescore = edgescore + 6; break;
+                            case Underground: edgescore = edgescore + 10; break;
+                            case Boat: edgescore = edgescore + 40; break;
                         }
                     }
                 }
-                //Stops MrX going to a node from which he cannot escape
-                if(!hasEscape) { return -9998; }
             }  
             
             //Gives you shortest distance to each node from starting location
             int[] distance = dijkstras.calculate(location, graph);
             
             //Adds up the distance of all the detectives from node.
-            for(PlayerData player : playerList){
-                if(player.colour()!=Black)
+            for(Colour player : view.getPlayers()){
+                if(player.isDetective())
                 {
                     //discourage going 1 move away from detectives as this is dangerous
-                    if(distance[player.location()] == 1) totaldistance -= 150;
-                    //score extremely negatively as this means youd lose
-                    else if(distance[player.location()] < 1) { return -9998; }
-                    else totaldistance += distance[player.location()];
+                    if(distance[view.getPlayerLocation(player)] < 2) totaldistance -= 100;
+                    else totaldistance += distance[view.getPlayerLocation(player)]-depth;
                 }
             }
+            //If game over in future situation and MrX isnt one move away from a detective set score large so will be chosen
+            if(view.getRounds().size()<= view.getCurrentRound()+depth && totaldistance > view.getPlayers().size()) score = 9999;
             //Calculate score based on weighted combination of edges leaving node and how close it is to detectives
-            score = edgescore + (totaldistance/(playerList.size()-1)*30);
+            else score = edgescore + (totaldistance/(view.getPlayers().size()-1)*30);
             return score;
         }
     

@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
 import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 
@@ -34,11 +32,10 @@ public class HeathkinsD1 implements PlayerFactory {
     // TODO create a new player here
     @Override
     public Player createPlayer(Colour colour) {
-        return new MyAI();
+        return new DetectiveV1();
     }
 
-    // TODO A sample player that selects a random move
-    private static class MyAI implements Player {
+    public static class DetectiveV1 implements Player {
         Dijkstras dijkstras = new Dijkstras();
         private final Random random = new Random();
 
@@ -95,7 +92,7 @@ public class HeathkinsD1 implements PlayerFactory {
             Move bestMove = new PassMove(playerColour);
             int bestScore = 100;
             // of the valid moves available, find and make the best move
-            int[] distances = dijkstras.calculate(mrXLocation, graph, true);
+            int[] distances = dijkstras.calculateto(mrXLocation, graph, -1);
             for (Move m : moves) {
                 if (m instanceof TicketMove) {
 

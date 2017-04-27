@@ -46,11 +46,10 @@ public class Heathkinsv4 implements PlayerFactory {
             //Save doubleMoves in variable to increase efficiency
             Set<MoveNode> doubleMoves = new HashSet<>();
             //Instanstiate Scorer Object
-            Scorer scorer = new Scorer();
+            Scorerold scorer = new Scorerold();
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
                     System.out.println("Start Location Is: "+location);
-                    System.out.println("Score of Start Location: " + scorer.scorenode(view, location, 0));
                     //make sure best is reset for new move
                     best = -9999;
                     //Initialise bestmove to a random move

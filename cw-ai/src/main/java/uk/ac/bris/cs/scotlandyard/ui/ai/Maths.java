@@ -3,13 +3,7 @@
  */
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-
-
-/**
- *
- * @author Will
- */
-public class math {
+public class Maths {
     
     public int max(int a, int b){
             if(a<b) return b;

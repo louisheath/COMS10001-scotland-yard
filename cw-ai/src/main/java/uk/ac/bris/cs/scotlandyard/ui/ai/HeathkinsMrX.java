@@ -33,17 +33,15 @@ import static uk.ac.bris.cs.scotlandyard.model.Ticket.Underground;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.fromTransport;
 
 
-// TODO name the AI
-@ManagedAI("HeathkinsFinal")
-public class HeathkinsFinal implements PlayerFactory {
+@ManagedAI("HeathkinsMrX")
+public class HeathkinsMrX implements PlayerFactory {
 
-	// TODO create a new player here
 	@Override
 	public Player createPlayer(Colour colour) {
-            return new MyAI();
+            return new MrXAI();
 	}
 
-	private static class MyAI implements Player {
+	public static class MrXAI implements Player {
             //Allows random numbers to be generated
             private final Random random = new Random();
             //How many moves ahead to look(1 is just as what the opponents do u)
@@ -51,13 +49,13 @@ public class HeathkinsFinal implements PlayerFactory {
             //Stops bug of depth just getting bigger and bigger
             int depthreset = 24; 
             //Instanstiate Scorer Object
-            Scorer2 scorer = new Scorer2();
+            Scorer scorer = new Scorer();
             //Types Of Ticket
             List<Ticket> ticketTypes = new ArrayList<>(Arrays.asList(Bus, Taxi, Underground, Double, Secret));
             // Create a dikstras so we can call it later
             static Dijkstras dijkstras = new Dijkstras();
             // Create a math object so we can call it later
-            static math math = new math();
+            static Maths maths = new Maths();
             //Create Set Of Move Nodes
             Set<DataNode> nextMovesNodes  = new HashSet<>();
             //Store timeout data
@@ -65,7 +63,7 @@ public class HeathkinsFinal implements PlayerFactory {
 
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves,Consumer<Move> callback){
-
+                System.out.println("MrX Making Move ........");
                     long time = System.currentTimeMillis();
                     endtime = time+14000;
                     //Best Score and node at depth
@@ -213,8 +211,8 @@ public class HeathkinsFinal implements PlayerFactory {
             if (node.next().get(0).move().colour() == Black){
                 int v = -999999;
                 for (DataNode child : node.next()){
-                    v = math.max(v, alphabeta(child, alpha, beta, graph, depth + 1));
-                    alpha = math.max(alpha, v);
+                    v = maths.max(v, alphabeta(child, alpha, beta, graph, depth + 1));
+                    alpha = maths.max(alpha, v);
                     if (beta <= alpha) break;
                 }
                 node.score(v);
@@ -224,8 +222,8 @@ public class HeathkinsFinal implements PlayerFactory {
             else{
                 int v = 999999;
                 for (DataNode child : node.next()){
-                    v = math.min(v, alphabeta(child, alpha, beta, graph, depth + 1));
-                    beta = math.min(beta, v);
+                    v = maths.min(v, alphabeta(child, alpha, beta, graph, depth + 1));
+                    beta = maths.min(beta, v);
                     if (beta <= alpha) break;   
                 }
                 node.score(v);
@@ -247,7 +245,7 @@ public class HeathkinsFinal implements PlayerFactory {
                 //Find where out where they are
                 int playerLocation = player.location();
                 if(graph.containsNode(playerLocation)){
-                    int[] result = dijkstras.calculate(node.playerList().get(0).location(), graph, true);
+                    int[] result = dijkstras.calculate(node.playerList().get(0).location(), graph, -1);
 
                     //Find all paths from current location
                     Collection<Edge<Integer, Transport>> edges = graph.getEdgesFrom(graph.getNode(playerLocation));

@@ -1,10 +1,8 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
@@ -44,7 +42,7 @@ public class MrXFinder implements Spectator {
                     List<Colour> players = new ArrayList<>();
                     players.addAll(view.getPlayers());
                     players.remove(Black);
-                    List<Integer> playerLocations = new ArrayList();
+                    List<Integer> playerLocations = new ArrayList<>();
                     for (Colour p : players) {
                         playerLocations.add(view.getPlayerLocation(p));
                     }

@@ -1,7 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -52,12 +51,13 @@ public class HeathkinsD2 implements PlayerFactory {
     }
 
     // TODO A sample player that selects a random move
-    private static class MyAI implements Player {
+    public static class MyAI implements Player {
         Dijkstras dijkstras = new Dijkstras();
         private final Random random = new Random();
 
         @Override
         public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+            System.out.println(view.getCurrentPlayer() + " Detective Making Move ........");
             Graph<Integer, Transport> graph = view.getGraph();
             
             // key info about current player
@@ -109,7 +109,7 @@ public class HeathkinsD2 implements PlayerFactory {
             // Scores each valid move
             int[] scores = new int[200];
             for (int l : mrXLocations) {
-                int[] distances = dijkstras.calculate(l, graph, true);
+                int[] distances = dijkstras.calculateto(l, graph, -1);
                 for (Move m : moves) {
                     if (m instanceof TicketMove) {
 
@@ -132,7 +132,6 @@ public class HeathkinsD2 implements PlayerFactory {
             int bestScore = 1000;
             for (Move m : moves) {
                 if (m instanceof TicketMove) {
-
                     TicketMove move = (TicketMove) m;
                     int dest = move.destination();
                     
