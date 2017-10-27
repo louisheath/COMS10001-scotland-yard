@@ -1,6 +1,6 @@
 ### Scotland Yard Project ###
 
-Developed in NetBeans by Louis Heath and William Hawkins.
+Developed in NetBeans by Louis Heath and [William Hawkins](https://github.com/WSJHawkins).
 
 The task for this project was to produce a working model of the board game 'Scotland Yard', and optionally to produce AIs to play against.
 
